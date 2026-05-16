@@ -1,8 +1,9 @@
 import { fetchWithRetry } from '@/lib/utils'
 
-const EMBEDDING_MODEL = 'nomic-embed-text-v1_5'
+// Jina AI: free tier 1M tokens/month, 768-dim output matches pgvector schema
+const EMBEDDING_MODEL = 'jina-embeddings-v2-base-en'
 const BATCH_SIZE = 20
-const EMBEDDING_DIM = 768 // nomic-embed-text-v1_5 outputs 768 dims
+const EMBEDDING_DIM = 768
 
 export async function embedTexts(texts: string[]): Promise<number[][]> {
   const embeddings: number[][] = []
@@ -18,11 +19,11 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
 
 async function embedBatch(texts: string[]): Promise<number[][]> {
   const response = await fetchWithRetry(
-    'https://api.groq.com/openai/v1/embeddings',
+    'https://api.jina.ai/v1/embeddings',
     {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        Authorization: `Bearer ${process.env.JINA_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

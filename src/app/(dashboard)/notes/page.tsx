@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Sidebar } from '@/components/sidebar/sidebar'
 import { TipTapEditor } from '@/components/editor/tiptap-editor'
 import { useNotesStore } from '@/store/notes-store'
-import { Note } from '@/types'
+import { Note, Recording } from '@/types'
 import { FileText, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Spinner } from '@/components/ui/spinner'
@@ -78,11 +78,16 @@ export default function NotesPage() {
     updateNote(noteId, { title })
   }
 
+  function handleTranscriptReady(_recording: Recording, note: Note) {
+    addNote(note)
+    useNotesStore.getState().setActiveNote(note.id)
+  }
+
   const activeNote = getActiveNote()
 
   return (
     <div className="flex h-full">
-      <Sidebar onNewNote={handleNewNote} userEmail={userEmail} />
+      <Sidebar onNewNote={handleNewNote} onTranscriptReady={handleTranscriptReady} userEmail={userEmail} />
 
       <main className="flex flex-1 flex-col overflow-hidden bg-white">
         {isLoading ? (

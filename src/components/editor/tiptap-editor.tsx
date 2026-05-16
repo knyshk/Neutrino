@@ -1,9 +1,8 @@
 'use client'
 
-import { useEffect, useCallback, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
 import Placeholder from '@tiptap/extension-placeholder'
 import { Toolbar } from './toolbar'
 import { Note } from '@/types'
@@ -23,11 +22,11 @@ export function TipTapEditor({ note, onSave, readOnly = false }: TipTapEditorPro
   const lastSavedContent = useRef<string>(JSON.stringify(note.content))
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         codeBlock: false,
       }),
-      Underline,
       Placeholder.configure({
         placeholder: 'Start writing…',
         emptyEditorClass: 'is-editor-empty',
@@ -37,8 +36,7 @@ export function TipTapEditor({ note, onSave, readOnly = false }: TipTapEditorPro
     editable: !readOnly,
     editorProps: {
       attributes: {
-        class:
-          'prose prose-neutral max-w-none focus:outline-none min-h-[calc(100vh-200px)] px-8 py-6',
+        class: 'prose prose-neutral max-w-none focus:outline-none min-h-[calc(100vh-200px)] px-8 py-6',
       },
     },
     onUpdate: ({ editor }) => {
@@ -65,7 +63,6 @@ export function TipTapEditor({ note, onSave, readOnly = false }: TipTapEditorPro
     },
   })
 
-  // Update editor content when note changes (e.g. switching notes)
   useEffect(() => {
     if (!editor) return
     const currentContent = JSON.stringify(editor.getJSON())
@@ -77,7 +74,6 @@ export function TipTapEditor({ note, onSave, readOnly = false }: TipTapEditorPro
     }
   }, [editor, note.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cleanup debounce on unmount
   useEffect(() => {
     return () => {
       if (saveTimeout.current) clearTimeout(saveTimeout.current)
@@ -90,7 +86,16 @@ export function TipTapEditor({ note, onSave, readOnly = false }: TipTapEditorPro
         <div className="flex items-center justify-between border-b border-neutral-100 bg-white">
           <Toolbar editor={editor} />
           <div className="px-4 py-2">
-            <SaveIndicator status={saveStatus} />
+            <span
+              className={cn('text-xs transition-colors', {
+                'text-neutral-400': saveStatus === 'saved',
+                'text-amber-500': saveStatus === 'saving' || saveStatus === 'unsaved',
+              })}
+            >
+              {saveStatus === 'saved' && 'Saved'}
+              {saveStatus === 'saving' && 'Saving…'}
+              {saveStatus === 'unsaved' && 'Unsaved changes'}
+            </span>
           </div>
         </div>
       )}
@@ -98,20 +103,5 @@ export function TipTapEditor({ note, onSave, readOnly = false }: TipTapEditorPro
         <EditorContent editor={editor} className="h-full" />
       </div>
     </div>
-  )
-}
-
-function SaveIndicator({ status }: { status: SaveStatus }) {
-  return (
-    <span
-      className={cn('text-xs transition-colors', {
-        'text-neutral-400': status === 'saved',
-        'text-amber-500': status === 'saving' || status === 'unsaved',
-      })}
-    >
-      {status === 'saved' && 'Saved'}
-      {status === 'saving' && 'Saving…'}
-      {status === 'unsaved' && 'Unsaved changes'}
-    </span>
   )
 }

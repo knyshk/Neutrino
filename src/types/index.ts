@@ -83,16 +83,18 @@ export interface AISession {
 }
 
 export interface AIMessage {
+  id: string
   role: 'user' | 'assistant'
   content: string
   sources?: SourceAttribution[]
-  timestamp: string
+  created_at: string
 }
 
 export interface SourceAttribution {
   source_title: string
   source_type: 'note' | 'recording' | 'file'
   source_id: string
+  chunk_text: string
   similarity: number
 }
 

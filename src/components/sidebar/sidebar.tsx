@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   FileText,
@@ -17,6 +17,10 @@ import { createClient } from '@/lib/supabase/client'
 import { useNotesStore } from '@/store/notes-store'
 import { useUIStore } from '@/store/ui-store'
 import { NoteList } from './note-list'
+import { FileUpload, FileListItem } from '@/components/upload/file-upload'
+import { Recorder, RecordingListItem } from '@/components/recording/recorder'
+import { AIChat } from '@/components/ai/chat'
+import { UploadedFile, Recording } from '@/types'
 import { cn } from '@/lib/utils'
 
 type Tab = 'notes' | 'files' | 'recordings' | 'ai'
@@ -30,13 +34,42 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 interface SidebarProps {
   onNewNote: () => void
+  onTranscriptReady: (recording: Recording, note: import('@/types').Note) => void
   userEmail?: string
 }
 
-export function Sidebar({ onNewNote, userEmail }: SidebarProps) {
+export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProps) {
   const router = useRouter()
   const { sidebarOpen, toggleSidebar, activeTab, setActiveTab } = useUIStore()
   const { searchQuery, setSearchQuery } = useNotesStore()
+
+  const [files, setFiles] = useState<UploadedFile[]>([])
+  const [recordings, setRecordings] = useState<Recording[]>([])
+
+  useEffect(() => {
+    if (activeTab === 'files') loadFiles()
+    if (activeTab === 'recordings') loadRecordings()
+  }, [activeTab])
+
+  async function loadFiles() {
+    try {
+      const res = await fetch('/api/upload')
+      if (res.ok) {
+        const data = await res.json()
+        setFiles(data.files || [])
+      }
+    } catch { /* non-critical */ }
+  }
+
+  async function loadRecordings() {
+    try {
+      const res = await fetch('/api/transcribe')
+      if (res.ok) {
+        const data = await res.json()
+        setRecordings(data.recordings || [])
+      }
+    } catch { /* non-critical */ }
+  }
 
   async function handleLogout() {
     const supabase = createClient()
@@ -101,7 +134,6 @@ export function Sidebar({ onNewNote, userEmail }: SidebarProps) {
       <div className="flex-1 overflow-hidden flex flex-col">
         {activeTab === 'notes' && (
           <>
-            {/* Search + New Note */}
             <div className="p-2 space-y-1.5">
               <div className="relative">
                 <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
@@ -128,23 +160,53 @@ export function Sidebar({ onNewNote, userEmail }: SidebarProps) {
         )}
 
         {activeTab === 'files' && (
-          <div className="p-3 text-xs text-neutral-500 text-center mt-8">
-            <Upload size={24} className="mx-auto mb-2 text-neutral-300" />
-            <p>File uploads coming soon</p>
+          <div className="flex-1 overflow-y-auto flex flex-col">
+            <FileUpload
+              onUploadComplete={(file) => {
+                setFiles((prev) => [file, ...prev])
+              }}
+            />
+            {files.length > 0 && (
+              <div className="flex-1 overflow-y-auto">
+                <p className="px-3 pt-1 pb-0.5 text-[10px] font-medium uppercase tracking-wide text-neutral-400">
+                  Uploaded files
+                </p>
+                {files.map((f) => (
+                  <FileListItem
+                    key={f.id}
+                    file={f}
+                    onDelete={(id) => setFiles((prev) => prev.filter((x) => x.id !== id))}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'recordings' && (
-          <div className="p-3 text-xs text-neutral-500 text-center mt-8">
-            <Mic size={24} className="mx-auto mb-2 text-neutral-300" />
-            <p>Recordings coming soon</p>
+          <div className="flex-1 overflow-y-auto flex flex-col">
+            <Recorder
+              onTranscriptReady={(recording, note) => {
+                setRecordings((prev) => [recording, ...prev])
+                onTranscriptReady(recording, note)
+              }}
+            />
+            {recordings.length > 0 && (
+              <div className="flex-1 overflow-y-auto">
+                <p className="px-3 pt-2 pb-0.5 text-[10px] font-medium uppercase tracking-wide text-neutral-400">
+                  Past recordings
+                </p>
+                {recordings.map((r) => (
+                  <RecordingListItem key={r.id} recording={r} />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'ai' && (
-          <div className="p-3 text-xs text-neutral-500 text-center mt-8">
-            <MessageSquare size={24} className="mx-auto mb-2 text-neutral-300" />
-            <p>AI assistant coming soon</p>
+          <div className="flex-1 overflow-hidden flex flex-col">
+            <AIChat />
           </div>
         )}
       </div>

@@ -212,6 +212,7 @@ function deduplicateSources(chunks: ChunkWithSimilarity[]): SourceAttribution[] 
         source_title: chunk.source_title,
         source_type: chunk.source_type,
         source_id: sourceId,
+        chunk_text: chunk.chunk_text,
         similarity: chunk.similarity,
       })
     }
