@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, FormEvent } from 'react'
-import { Send, Loader2, MessageSquare, ChevronDown, ChevronUp, BookOpen } from 'lucide-react'
+import { Send, Loader2, MessageSquare, ChevronDown, ChevronUp, BookOpen, Trash2 } from 'lucide-react'
 import { AIMessage, SourceAttribution } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -9,13 +9,52 @@ export function AIChat() {
   const [messages, setMessages] = useState<AIMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [initializing, setInitializing] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [sessionId, setSessionId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Load persisted session on mount
+  useEffect(() => {
+    async function loadSession() {
+      try {
+        const res = await fetch('/api/ai-session')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.session) {
+            setMessages(data.session.messages || [])
+            setSessionId(data.session.id)
+          }
+        }
+      } catch { /* non-critical */ } finally {
+        setInitializing(false)
+      }
+    }
+    loadSession()
+  }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  // Debounced persist after every message update
+  function persistMessages(updatedMessages: AIMessage[], sid: string | null) {
+    if (saveTimeout.current) clearTimeout(saveTimeout.current)
+    saveTimeout.current = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/ai-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: updatedMessages, session_id: sid }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (!sid) setSessionId(data.session_id)
+        }
+      } catch { /* non-critical */ }
+    }, 800)
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -31,14 +70,19 @@ export function AIChat() {
       content: question,
       created_at: new Date().toISOString(),
     }
-    setMessages((prev) => [...prev, userMsg])
+
+    const updatedWithUser = [...messages, userMsg]
+    setMessages(updatedWithUser)
     setLoading(true)
 
     try {
       const res = await fetch('/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({
+          question,
+          conversation_history: messages.slice(-10), // last 5 turns
+        }),
       })
 
       const data = await res.json()
@@ -54,12 +98,26 @@ export function AIChat() {
         sources: data.sources,
         created_at: new Date().toISOString(),
       }
-      setMessages((prev) => [...prev, assistantMsg])
+
+      const finalMessages = [...updatedWithUser, assistantMsg]
+      setMessages(finalMessages)
+      persistMessages(finalMessages, sessionId)
     } catch (err) {
       setError(String(err).replace('Error: ', ''))
+      // Still persist user message even on error
+      persistMessages(updatedWithUser, sessionId)
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleClearHistory() {
+    if (!confirm('Clear your entire chat history? This cannot be undone.')) return
+    try {
+      await fetch('/api/ai-session', { method: 'DELETE' })
+      setMessages([])
+      setSessionId(null)
+    } catch { /* non-critical */ }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -69,8 +127,29 @@ export function AIChat() {
     }
   }
 
+  if (initializing) {
+    return (
+      <div className="flex flex-1 items-center justify-center py-8">
+        <Loader2 size={18} className="animate-spin text-neutral-400" />
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-full">
+      {/* Header with clear button */}
+      {messages.length > 0 && (
+        <div className="flex items-center justify-end px-2 pt-1.5">
+          <button
+            onClick={handleClearHistory}
+            className="flex items-center gap-1 text-[10px] text-neutral-400 hover:text-red-400 transition-colors"
+          >
+            <Trash2 size={10} />
+            Clear history
+          </button>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-2 py-3 space-y-3">
         {messages.length === 0 && (
@@ -111,7 +190,6 @@ export function AIChat() {
       <div className="border-t border-neutral-100 p-2">
         <form onSubmit={handleSubmit} className="flex items-end gap-1.5">
           <textarea
-            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -162,9 +240,7 @@ function MessageBubble({ message }: { message: AIMessage }) {
         <div
           className={cn(
             'rounded-lg px-3 py-2 text-xs leading-relaxed',
-            isUser
-              ? 'bg-violet-600 text-white'
-              : 'bg-neutral-100 text-neutral-700'
+            isUser ? 'bg-violet-600 text-white' : 'bg-neutral-100 text-neutral-700'
           )}
         >
           <p className="whitespace-pre-wrap">{message.content}</p>

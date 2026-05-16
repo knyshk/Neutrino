@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
   // Upload raw file to Supabase Storage
   const storagePath = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-  const { data: storageData, error: storageError } = await supabase.storage
+  const { error: storageError } = await supabase.storage
     .from('documents')
     .upload(storagePath, buffer, { contentType: file.type, upsert: false })
 

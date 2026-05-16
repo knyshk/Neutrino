@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { Sidebar } from '@/components/sidebar/sidebar'
 import { TipTapEditor } from '@/components/editor/tiptap-editor'
 import { useNotesStore } from '@/store/notes-store'
