@@ -1,15 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, Mic, Upload, RotateCcw, Trash2 } from 'lucide-react'
+import { FileText, Mic, Upload, RotateCcw, Trash2, Users } from 'lucide-react'
 import { useNotesStore } from '@/store/notes-store'
 import { Note } from '@/types'
 import { formatDate, truncate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { NoteListSkeleton } from '@/components/ui/skeleton'
+import { useToast } from '@/components/ui/toast'
 
 export function NoteList() {
-  const { getFilteredNotes, getTrashedNotes, activeNoteId, setActiveNote, showTrash, setShowTrash, updateNote, removeNote } = useNotesStore()
+  const { getFilteredNotes, getTrashedNotes, activeNoteId, setActiveNote, showTrash, setShowTrash, updateNote, removeNote, isLoading } = useNotesStore()
   const notes = showTrash ? getTrashedNotes() : getFilteredNotes()
+  const { success: toastSuccess, error: toastError } = useToast()
 
   async function handleRestore(note: Note) {
     await fetch(`/api/notes/${note.id}`, {
@@ -18,15 +21,26 @@ export function NoteList() {
       body: JSON.stringify({ is_deleted: false }),
     })
     updateNote(note.id, { is_deleted: false })
+    toastSuccess(`"${note.title || 'Untitled'}" restored`)
   }
 
-  async function handlePermanentDelete(note: Note) {
-    if (!confirm(`Permanently delete "${note.title}"? This cannot be undone.`)) return
-    await fetch(`/api/notes/${note.id}`, { method: 'DELETE' })
-    removeNote(note.id)
+  async function handlePermanentDelete(note: Note, confirmed: boolean, setConfirmed: (v: boolean) => void) {
+    if (!confirmed) { setConfirmed(true); return }
+    setConfirmed(false)
+    const res = await fetch(`/api/notes/${note.id}`, { method: 'DELETE' })
+    if (res.ok) {
+      removeNote(note.id)
+      toastSuccess(`"${note.title || 'Untitled'}" permanently deleted`)
+    } else {
+      toastError('Failed to delete note')
+    }
   }
 
   const trashedCount = getTrashedNotes().length
+
+  if (isLoading) {
+    return <NoteListSkeleton />
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -62,7 +76,7 @@ export function NoteList() {
               key={note.id}
               note={note}
               onRestore={() => handleRestore(note)}
-              onDelete={() => handlePermanentDelete(note)}
+              onDelete={handlePermanentDelete}
             />
           ) : (
             <NoteListItem
@@ -109,9 +123,14 @@ function NoteListItem({
     >
       <div className="flex items-center gap-1.5">
         <SourceIcon size={11} className={isActive ? 'text-violet-600' : 'text-neutral-400'} />
-        <span className={cn('truncate text-xs font-medium', isActive ? 'text-violet-700' : 'text-neutral-700')}>
+        <span className={cn('flex-1 truncate text-xs font-medium', isActive ? 'text-violet-700' : 'text-neutral-700')}>
           {note.title || 'Untitled Note'}
         </span>
+        {note.is_shared && (
+          <span title="Shared note">
+            <Users size={9} className="shrink-0 text-violet-400" />
+          </span>
+        )}
       </div>
       <div className="flex items-center justify-between gap-2">
         <span className="truncate text-[11px] text-neutral-400">{preview}</span>
@@ -128,9 +147,10 @@ function TrashedNoteItem({
 }: {
   note: Note
   onRestore: () => void
-  onDelete: () => void
+  onDelete: (note: Note, confirmed: boolean, setConfirmed: (v: boolean) => void) => void
 }) {
   const [restoring, setRestoring] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   return (
     <div className="group flex items-center gap-2 px-3 py-2 hover:bg-neutral-50 transition-colors">
@@ -146,9 +166,13 @@ function TrashedNoteItem({
           <RotateCcw size={11} />
         </button>
         <button
-          onClick={onDelete}
-          className="text-[10px] text-neutral-400 hover:text-red-500 transition-colors"
-          title="Delete permanently"
+          onClick={() => onDelete(note, confirmDelete, setConfirmDelete)}
+          onBlur={() => setConfirmDelete(false)}
+          className={cn(
+            'text-[10px] transition-colors',
+            confirmDelete ? 'text-red-500' : 'text-neutral-400 hover:text-red-500'
+          )}
+          title={confirmDelete ? 'Click again to confirm' : 'Delete permanently'}
         >
           <Trash2 size={11} />
         </button>

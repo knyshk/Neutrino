@@ -4,6 +4,7 @@ import { useState, useRef, DragEvent } from 'react'
 import { Upload, FileText, File, AlertCircle, CheckCircle, X, Loader2, RotateCcw } from 'lucide-react'
 import { UploadedFile } from '@/types'
 import { formatFileSize, cn } from '@/lib/utils'
+import { useToast } from '@/components/ui/toast'
 
 interface FileUploadProps {
   onUploadComplete: (file: UploadedFile) => void
@@ -161,13 +162,21 @@ export function FileListItem({
   const [deleting, setDeleting] = useState(false)
   const [reembedding, setReembedding] = useState(false)
   const [status, setStatus] = useState(file.extraction_status)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const { success: toastSuccess, error: toastError } = useToast()
 
   async function handleDelete() {
-    if (!confirm(`Delete "${file.name}"? This cannot be undone.`)) return
+    if (!confirmDelete) { setConfirmDelete(true); return }
     setDeleting(true)
+    setConfirmDelete(false)
     try {
-      await fetch(`/api/files/${file.id}`, { method: 'DELETE' })
-      onDelete(file.id)
+      const res = await fetch(`/api/files/${file.id}`, { method: 'DELETE' })
+      if (res.ok) {
+        onDelete(file.id)
+        toastSuccess(`"${file.name}" deleted`)
+      } else {
+        toastError('Failed to delete file')
+      }
     } finally {
       setDeleting(false)
     }
@@ -212,7 +221,12 @@ export function FileListItem({
         <button
           onClick={handleDelete}
           disabled={deleting}
-          className="h-5 w-5 flex items-center justify-center rounded text-neutral-300 hover:text-red-400 transition-colors"
+          onBlur={() => setConfirmDelete(false)}
+          className={cn(
+            'h-5 w-5 flex items-center justify-center rounded transition-colors text-xs',
+            confirmDelete ? 'text-red-500 font-bold' : 'text-neutral-300 hover:text-red-400'
+          )}
+          title={confirmDelete ? 'Click again to confirm' : 'Delete file'}
         >
           {deleting ? <Loader2 size={11} className="animate-spin" /> : <X size={11} />}
         </button>

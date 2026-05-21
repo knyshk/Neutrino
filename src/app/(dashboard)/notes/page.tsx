@@ -1,18 +1,29 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Sidebar } from '@/components/sidebar/sidebar'
 import { TipTapEditor } from '@/components/editor/tiptap-editor'
+import { ShareModal } from '@/components/collaboration/share-modal'
 import { useNotesStore } from '@/store/notes-store'
 import { Note, Recording } from '@/types'
-import { FileText, Sparkles } from 'lucide-react'
+import { FileText, Sparkles, Share2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Spinner } from '@/components/ui/spinner'
 
 export default function NotesPage() {
-  const { notes, setNotes, addNote, updateNote, activeNoteId, getActiveNote, setLoading, isLoading } =
+  return (
+    <Suspense>
+      <NotesPageInner />
+    </Suspense>
+  )
+}
+
+function NotesPageInner() {
+  const { notes, setNotes, addNote, updateNote, activeNoteId, getActiveNote, setLoading, isLoading, setActiveNote } =
     useNotesStore()
   const [userEmail, setUserEmail] = useState<string | undefined>()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     async function init() {
@@ -24,7 +35,6 @@ export default function NotesPage() {
         } = await supabase.auth.getUser()
         setUserEmail(user?.email)
 
-        // Load all notes including trashed (for trash view)
         const [activeRes, trashedRes] = await Promise.all([
           fetch('/api/notes'),
           fetch('/api/notes?include_deleted=true'),
@@ -39,14 +49,21 @@ export default function NotesPage() {
           allNotes.push(...trashed.filter((n: import('@/types').Note) => n.is_deleted))
         }
         setNotes(allNotes)
+
+        // Auto-select note from ?note= query param
+        const noteParam = searchParams.get('note')
+        if (noteParam) {
+          setActiveNote(noteParam)
+        }
       } finally {
         setLoading(false)
       }
     }
     init()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setNotes, setLoading])
 
-  async function handleNewNote() {
+  const handleNewNote = useCallback(async () => {
     const res = await fetch('/api/notes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -58,7 +75,25 @@ export default function NotesPage() {
       addNote(note)
       useNotesStore.getState().setActiveNote(note.id)
     }
-  }
+  }, [addNote])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const meta = e.metaKey || e.ctrlKey
+      if (meta && e.key === 'n') {
+        e.preventDefault()
+        handleNewNote()
+      }
+      if (meta && e.key === 'k') {
+        e.preventDefault()
+        const searchInput = document.querySelector<HTMLInputElement>('[data-search-input]')
+        searchInput?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [handleNewNote])
 
   async function handleSaveNote(content: Record<string, unknown>, contentText: string) {
     if (!activeNoteId) return
@@ -128,6 +163,7 @@ function NoteWorkspace({
   onUpdateTitle: (noteId: string, title: string) => Promise<void>
 }) {
   const [title, setTitle] = useState(note.title)
+  const [shareOpen, setShareOpen] = useState(false)
   const titleDebounce = useState<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -145,18 +181,34 @@ function NoteWorkspace({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-neutral-100 bg-white px-8 pt-6 pb-2">
+      <div className="flex items-center border-b border-neutral-100 bg-white px-8 pt-6 pb-2 gap-3">
         <input
           type="text"
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Untitled Note"
-          className="w-full text-2xl font-bold text-neutral-900 placeholder-neutral-300 focus:outline-none bg-transparent"
+          className="flex-1 text-2xl font-bold text-neutral-900 placeholder-neutral-300 focus:outline-none bg-transparent"
         />
+        <button
+          onClick={() => setShareOpen(true)}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-violet-300 hover:text-violet-600 transition-colors"
+          title="Share note"
+        >
+          <Share2 size={13} />
+          Share
+        </button>
       </div>
       <div className="flex-1 overflow-hidden">
         <TipTapEditor key={note.id} note={note} onSave={onSave} />
       </div>
+
+      {shareOpen && (
+        <ShareModal
+          noteId={note.id}
+          noteTitle={title || note.title}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </div>
   )
 }
@@ -181,6 +233,10 @@ function EmptyState({
           {hasNotes
             ? 'Choose a note from the sidebar or create a new one'
             : 'Create your first note to get started'}
+        </p>
+        <p className="mt-1 text-xs text-neutral-400">
+          <kbd className="rounded border border-neutral-200 px-1 py-0.5 text-[10px] font-mono">⌘N</kbd> new note &nbsp;·&nbsp;
+          <kbd className="rounded border border-neutral-200 px-1 py-0.5 text-[10px] font-mono">⌘K</kbd> search
         </p>
       </div>
       <button
