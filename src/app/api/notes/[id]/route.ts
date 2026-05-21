@@ -42,6 +42,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const body = await request.json()
   const updates: Record<string, unknown> = {}
 
+  if (body.is_deleted !== undefined) updates.is_deleted = body.is_deleted
   if (body.title !== undefined) updates.title = body.title
   if (body.content !== undefined) {
     updates.content = body.content

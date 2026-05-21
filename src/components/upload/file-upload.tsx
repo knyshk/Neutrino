@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, DragEvent } from 'react'
-import { Upload, FileText, File, AlertCircle, CheckCircle, X, Loader2 } from 'lucide-react'
+import { Upload, FileText, File, AlertCircle, CheckCircle, X, Loader2, RotateCcw } from 'lucide-react'
 import { UploadedFile } from '@/types'
 import { formatFileSize, cn } from '@/lib/utils'
 
@@ -152,11 +152,15 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
 export function FileListItem({
   file,
   onDelete,
+  onReembedSuccess,
 }: {
   file: UploadedFile
   onDelete: (id: string) => void
+  onReembedSuccess?: (id: string) => void
 }) {
   const [deleting, setDeleting] = useState(false)
+  const [reembedding, setReembedding] = useState(false)
+  const [status, setStatus] = useState(file.extraction_status)
 
   async function handleDelete() {
     if (!confirm(`Delete "${file.name}"? This cannot be undone.`)) return
@@ -169,25 +173,50 @@ export function FileListItem({
     }
   }
 
+  async function handleReembed() {
+    setReembedding(true)
+    try {
+      const res = await fetch(`/api/files/${file.id}/reembed`, { method: 'POST' })
+      if (res.ok) {
+        setStatus('done')
+        onReembedSuccess?.(file.id)
+      }
+    } finally {
+      setReembedding(false)
+    }
+  }
+
   const Icon = file.file_type === 'pdf' ? FileText : File
 
   return (
     <div className="group flex items-center gap-2 rounded-md px-3 py-2 hover:bg-neutral-100 transition-colors">
-      <Icon size={13} className={file.extraction_status === 'done' ? 'text-violet-500' : 'text-neutral-400'} />
+      <Icon size={13} className={status === 'done' ? 'text-violet-500' : 'text-neutral-400'} />
       <div className="flex-1 min-w-0">
         <p className="truncate text-xs font-medium text-neutral-700">{file.name}</p>
         <p className="text-[10px] text-neutral-400">
           {formatFileSize(file.file_size_bytes ?? 0)} ·{' '}
-          {file.extraction_status === 'done' ? 'Ready' : file.extraction_status === 'failed' ? '⚠ Failed' : 'Processing…'}
+          {status === 'done' ? 'Ready' : status === 'failed' ? '⚠ Failed' : 'Processing…'}
         </p>
       </div>
-      <button
-        onClick={handleDelete}
-        disabled={deleting}
-        className="hidden group-hover:flex h-5 w-5 items-center justify-center rounded text-neutral-300 hover:text-red-400 transition-colors"
-      >
-        {deleting ? <Loader2 size={11} className="animate-spin" /> : <X size={11} />}
-      </button>
+      <div className="hidden group-hover:flex items-center gap-1">
+        {status === 'failed' && (
+          <button
+            onClick={handleReembed}
+            disabled={reembedding}
+            className="h-5 w-5 flex items-center justify-center rounded text-neutral-300 hover:text-violet-500 transition-colors"
+            title="Re-embed file"
+          >
+            {reembedding ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
+          </button>
+        )}
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          className="h-5 w-5 flex items-center justify-center rounded text-neutral-300 hover:text-red-400 transition-colors"
+        >
+          {deleting ? <Loader2 size={11} className="animate-spin" /> : <X size={11} />}
+        </button>
+      </div>
     </div>
   )
 }

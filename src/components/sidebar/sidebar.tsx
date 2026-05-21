@@ -176,6 +176,9 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
                     key={f.id}
                     file={f}
                     onDelete={(id) => setFiles((prev) => prev.filter((x) => x.id !== id))}
+                    onReembedSuccess={(id) =>
+                      setFiles((prev) => prev.map((x) => x.id === id ? { ...x, extraction_status: 'done' } : x))
+                    }
                   />
                 ))}
               </div>
@@ -197,7 +200,14 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
                   Past recordings
                 </p>
                 {recordings.map((r) => (
-                  <RecordingListItem key={r.id} recording={r} />
+                  <RecordingListItem
+                    key={r.id}
+                    recording={r}
+                    onRetry={(updated, note) => {
+                      setRecordings((prev) => prev.map((x) => x.id === updated.id ? updated : x))
+                      if (note) onTranscriptReady(updated, note)
+                    }}
+                  />
                 ))}
               </div>
             )}

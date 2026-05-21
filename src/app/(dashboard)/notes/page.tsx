@@ -24,11 +24,21 @@ export default function NotesPage() {
         } = await supabase.auth.getUser()
         setUserEmail(user?.email)
 
-        const res = await fetch('/api/notes')
-        if (res.ok) {
-          const { notes } = await res.json()
-          setNotes(notes)
+        // Load all notes including trashed (for trash view)
+        const [activeRes, trashedRes] = await Promise.all([
+          fetch('/api/notes'),
+          fetch('/api/notes?include_deleted=true'),
+        ])
+        const allNotes: import('@/types').Note[] = []
+        if (activeRes.ok) {
+          const { notes } = await activeRes.json()
+          allNotes.push(...notes)
         }
+        if (trashedRes.ok) {
+          const { notes: trashed } = await trashedRes.json()
+          allNotes.push(...trashed.filter((n: import('@/types').Note) => n.is_deleted))
+        }
+        setNotes(allNotes)
       } finally {
         setLoading(false)
       }

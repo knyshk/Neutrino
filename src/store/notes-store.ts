@@ -6,6 +6,7 @@ interface NotesState {
   activeNoteId: string | null
   isLoading: boolean
   searchQuery: string
+  showTrash: boolean
   setNotes: (notes: Note[]) => void
   addNote: (note: Note) => void
   updateNote: (id: string, updates: Partial<Note>) => void
@@ -13,8 +14,10 @@ interface NotesState {
   setActiveNote: (id: string | null) => void
   setLoading: (loading: boolean) => void
   setSearchQuery: (query: string) => void
+  setShowTrash: (show: boolean) => void
   getActiveNote: () => Note | undefined
   getFilteredNotes: () => Note[]
+  getTrashedNotes: () => Note[]
 }
 
 export const useNotesStore = create<NotesState>((set, get) => ({
@@ -22,6 +25,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   activeNoteId: null,
   isLoading: false,
   searchQuery: '',
+  showTrash: false,
 
   setNotes: (notes) => set({ notes }),
 
@@ -45,6 +49,8 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 
   setSearchQuery: (query) => set({ searchQuery: query }),
 
+  setShowTrash: (show) => set({ showTrash: show }),
+
   getActiveNote: () => {
     const { notes, activeNoteId } = get()
     return notes.find((n) => n.id === activeNoteId)
@@ -62,4 +68,6 @@ export const useNotesStore = create<NotesState>((set, get) => ({
           (n.content_text?.toLowerCase().includes(q) ?? false))
     )
   },
+
+  getTrashedNotes: () => get().notes.filter((n) => n.is_deleted),
 }))

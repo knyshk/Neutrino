@@ -15,7 +15,6 @@ export function AIChat() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Load persisted session on mount
   useEffect(() => {
     async function loadSession() {
       try {
@@ -38,7 +37,6 @@ export function AIChat() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
-  // Debounced persist after every message update
   function persistMessages(updatedMessages: AIMessage[], sid: string | null) {
     if (saveTimeout.current) clearTimeout(saveTimeout.current)
     saveTimeout.current = setTimeout(async () => {
@@ -48,9 +46,9 @@ export function AIChat() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ messages: updatedMessages, session_id: sid }),
         })
-        if (res.ok) {
+        if (res.ok && !sid) {
           const data = await res.json()
-          if (!sid) setSessionId(data.session_id)
+          setSessionId(data.session_id)
         }
       } catch { /* non-critical */ }
     }, 800)
@@ -71,9 +69,20 @@ export function AIChat() {
       created_at: new Date().toISOString(),
     }
 
-    const updatedWithUser = [...messages, userMsg]
-    setMessages(updatedWithUser)
+    const messagesWithUser = [...messages, userMsg]
+    setMessages(messagesWithUser)
     setLoading(true)
+
+    // Placeholder for the streaming assistant message
+    const assistantId = crypto.randomUUID()
+    const assistantMsg: AIMessage = {
+      id: assistantId,
+      role: 'assistant',
+      content: '',
+      sources: [],
+      created_at: new Date().toISOString(),
+    }
+    setMessages([...messagesWithUser, assistantMsg])
 
     try {
       const res = await fetch('/api/query', {
@@ -81,31 +90,69 @@ export function AIChat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question,
-          conversation_history: messages.slice(-10), // last 5 turns
+          conversation_history: messages.slice(-10),
         }),
       })
 
-      const data = await res.json()
-
       if (!res.ok) {
+        const data = await res.json()
         throw new Error(data.error || 'Query failed')
       }
 
-      const assistantMsg: AIMessage = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: data.answer,
-        sources: data.sources,
-        created_at: new Date().toISOString(),
+      const reader = res.body!.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let accumulatedContent = ''
+      let sources: SourceAttribution[] = []
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed || !trimmed.startsWith('data: ')) continue
+
+          try {
+            const event = JSON.parse(trimmed.slice(6))
+
+            if (event.type === 'meta') {
+              sources = event.sources || []
+              setMessages((prev) =>
+                prev.map((m) => m.id === assistantId ? { ...m, sources } : m)
+              )
+            } else if (event.type === 'token') {
+              accumulatedContent += event.content
+              const snap = accumulatedContent
+              setMessages((prev) =>
+                prev.map((m) => m.id === assistantId ? { ...m, content: snap } : m)
+              )
+            }
+          } catch { /* malformed SSE line — skip */ }
+        }
       }
 
-      const finalMessages = [...updatedWithUser, assistantMsg]
-      setMessages(finalMessages)
+      const finalMessages = messagesWithUser.concat({
+        id: assistantId,
+        role: 'assistant',
+        content: accumulatedContent,
+        sources,
+        created_at: assistantMsg.created_at,
+      })
       persistMessages(finalMessages, sessionId)
     } catch (err) {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId
+            ? { ...m, content: 'Something went wrong. Please try again.' }
+            : m
+        )
+      )
       setError(String(err).replace('Error: ', ''))
-      // Still persist user message even on error
-      persistMessages(updatedWithUser, sessionId)
     } finally {
       setLoading(false)
     }
@@ -137,7 +184,6 @@ export function AIChat() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header with clear button */}
       {messages.length > 0 && (
         <div className="flex items-center justify-end px-2 pt-1.5">
           <button
@@ -150,7 +196,6 @@ export function AIChat() {
         </div>
       )}
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-2 py-3 space-y-3">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4 pb-8">
@@ -163,19 +208,8 @@ export function AIChat() {
         )}
 
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
+          <MessageBubble key={msg.id} message={msg} isStreaming={loading && msg.role === 'assistant' && msg === messages[messages.length - 1]} />
         ))}
-
-        {loading && (
-          <div className="flex items-start gap-2">
-            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100">
-              <div className="h-2 w-2 rounded-full bg-violet-500" />
-            </div>
-            <div className="rounded-lg bg-neutral-100 px-3 py-2">
-              <Loader2 size={13} className="animate-spin text-neutral-500" />
-            </div>
-          </div>
-        )}
 
         {error && (
           <div className="rounded-lg border border-red-100 bg-red-50 px-3 py-2">
@@ -186,7 +220,6 @@ export function AIChat() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <div className="border-t border-neutral-100 p-2">
         <form onSubmit={handleSubmit} className="flex items-end gap-1.5">
           <textarea
@@ -195,7 +228,8 @@ export function AIChat() {
             onKeyDown={handleKeyDown}
             placeholder="Ask a question… (Enter to send)"
             rows={1}
-            className="flex-1 resize-none rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-xs text-neutral-700 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-violet-400 min-h-[32px] max-h-[80px]"
+            disabled={loading}
+            className="flex-1 resize-none rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-xs text-neutral-700 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-violet-400 min-h-[32px] max-h-[80px] disabled:opacity-50"
             style={{ height: 'auto' }}
             onInput={(e) => {
               const t = e.target as HTMLTextAreaElement
@@ -221,9 +255,10 @@ export function AIChat() {
   )
 }
 
-function MessageBubble({ message }: { message: AIMessage }) {
+function MessageBubble({ message, isStreaming }: { message: AIMessage; isStreaming: boolean }) {
   const [sourcesOpen, setSourcesOpen] = useState(false)
   const isUser = message.role === 'user'
+  const isEmpty = !message.content && isStreaming
 
   return (
     <div className={cn('flex items-start gap-2', isUser && 'flex-row-reverse')}>
@@ -243,10 +278,21 @@ function MessageBubble({ message }: { message: AIMessage }) {
             isUser ? 'bg-violet-600 text-white' : 'bg-neutral-100 text-neutral-700'
           )}
         >
-          <p className="whitespace-pre-wrap">{message.content}</p>
+          {isEmpty ? (
+            <span className="inline-flex gap-0.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="h-1.5 w-1.5 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="h-1.5 w-1.5 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+            </span>
+          ) : (
+            <p className="whitespace-pre-wrap">
+              {message.content}
+              {isStreaming && <span className="ml-0.5 inline-block h-3 w-0.5 bg-neutral-500 animate-pulse" />}
+            </p>
+          )}
         </div>
 
-        {!isUser && message.sources && message.sources.length > 0 && (
+        {!isUser && !isEmpty && message.sources && message.sources.length > 0 && (
           <div className="w-full">
             <button
               onClick={() => setSourcesOpen((o) => !o)}
@@ -256,7 +302,6 @@ function MessageBubble({ message }: { message: AIMessage }) {
               {message.sources.length} source{message.sources.length !== 1 ? 's' : ''}
               {sourcesOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
             </button>
-
             {sourcesOpen && (
               <div className="mt-1 space-y-1">
                 {message.sources.map((src, i) => (

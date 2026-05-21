@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Mic, Square, Pause, Play, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
+import { Mic, Square, Pause, Play, Loader2, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react'
 import { Recording, Note } from '@/types'
 import { formatDuration, cn } from '@/lib/utils'
 
@@ -34,11 +34,7 @@ export function Recorder({ onTranscriptReady }: RecorderProps) {
     setErrorMessage(null)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: 44100,
-        },
+        audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 },
       })
       streamRef.current = stream
 
@@ -56,9 +52,8 @@ export function Recorder({ onTranscriptReady }: RecorderProps) {
         if (e.data.size > 0) chunks.current.push(e.data)
       }
 
-      recorder.start(1000) // collect data every second
+      recorder.start(1000)
       setState('recording')
-
       timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000)
     } catch (err) {
       if (String(err).includes('Permission') || String(err).includes('NotAllowed')) {
@@ -107,9 +102,7 @@ export function Recorder({ onTranscriptReady }: RecorderProps) {
       const res = await fetch('/api/transcribe', { method: 'POST', body: formData })
       const data = await res.json()
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Transcription failed')
-      }
+      if (!res.ok) throw new Error(data.error || 'Transcription failed')
 
       setState('done')
       onTranscriptReady(data.recording, data.note)
@@ -195,7 +188,6 @@ export function Recorder({ onTranscriptReady }: RecorderProps) {
     )
   }
 
-  // recording or paused
   return (
     <div className="p-2 space-y-2">
       <div className={cn(
@@ -204,9 +196,7 @@ export function Recorder({ onTranscriptReady }: RecorderProps) {
       )}>
         <div className="flex items-center gap-2">
           <span className={cn('h-2 w-2 rounded-full', state === 'recording' ? 'bg-red-500 animate-pulse' : 'bg-neutral-400')} />
-          <span className="text-xs font-mono font-medium text-neutral-700">
-            {formatDuration(elapsed)}
-          </span>
+          <span className="text-xs font-mono font-medium text-neutral-700">{formatDuration(elapsed)}</span>
         </div>
         <span className="text-[10px] text-neutral-500">
           {state === 'recording' ? 'Recording…' : 'Paused'}
@@ -240,20 +230,54 @@ export function Recorder({ onTranscriptReady }: RecorderProps) {
   )
 }
 
-export function RecordingListItem({ recording }: { recording: Recording }) {
+export function RecordingListItem({
+  recording,
+  onRetry,
+}: {
+  recording: Recording
+  onRetry?: (updated: Recording, note: Note | null) => void
+}) {
+  const [retrying, setRetrying] = useState(false)
+  const [status, setStatus] = useState(recording.transcription_status)
+
+  async function handleRetry() {
+    setRetrying(true)
+    setStatus('processing')
+    try {
+      const res = await fetch(`/api/recordings/${recording.id}/retry`, { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        setStatus('done')
+        onRetry?.(data.recording, data.note)
+      } else {
+        setStatus('failed')
+      }
+    } catch {
+      setStatus('failed')
+    } finally {
+      setRetrying(false)
+    }
+  }
+
   return (
-    <div className="flex items-center gap-2 rounded-md px-3 py-2 hover:bg-neutral-100 transition-colors">
-      <Mic size={13} className={recording.transcription_status === 'done' ? 'text-violet-500' : 'text-neutral-400'} />
+    <div className="flex items-center gap-2 rounded-md px-3 py-2 hover:bg-neutral-100 transition-colors group">
+      <Mic size={13} className={status === 'done' ? 'text-violet-500' : 'text-neutral-400'} />
       <div className="flex-1 min-w-0">
         <p className="truncate text-xs font-medium text-neutral-700">{recording.title}</p>
         <p className="text-[10px] text-neutral-400">
-          {recording.transcription_status === 'done'
-            ? 'Transcribed'
-            : recording.transcription_status === 'failed'
-            ? '⚠ Failed'
-            : 'Processing…'}
+          {status === 'done' ? 'Transcribed' : status === 'failed' ? '⚠ Failed' : 'Processing…'}
         </p>
       </div>
+      {status === 'failed' && onRetry && (
+        <button
+          onClick={handleRetry}
+          disabled={retrying}
+          className="hidden group-hover:flex items-center gap-1 text-[10px] text-neutral-400 hover:text-violet-600 transition-colors"
+          title="Retry transcription"
+        >
+          {retrying ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
+        </button>
+      )}
     </div>
   )
 }
