@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input'
 
 export function SignupForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect') || '/notes'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -53,9 +55,11 @@ export function SignupForm() {
   async function handleGoogleSignup() {
     setGoogleLoading(true)
     const supabase = createClient()
+    const callbackUrl = new URL(`${location.origin}/api/auth/callback`)
+    if (redirectTo !== '/notes') callbackUrl.searchParams.set('next', redirectTo)
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${location.origin}/api/auth/callback` },
+      options: { redirectTo: callbackUrl.toString() },
     })
   }
 

@@ -41,11 +41,11 @@ export function LoginForm() {
   async function handleGoogleLogin() {
     setGoogleLoading(true)
     const supabase = createClient()
+    const callbackUrl = new URL(`${location.origin}/api/auth/callback`)
+    if (redirectTo !== '/notes') callbackUrl.searchParams.set('next', redirectTo)
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${location.origin}/api/auth/callback`,
-      },
+      options: { redirectTo: callbackUrl.toString() },
     })
   }
 

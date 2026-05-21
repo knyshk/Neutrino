@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   FileText,
@@ -45,10 +45,12 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
 
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [recordings, setRecordings] = useState<Recording[]>([])
+  const filesLoaded = useRef(false)
+  const recordingsLoaded = useRef(false)
 
   useEffect(() => {
-    if (activeTab === 'files') loadFiles()
-    if (activeTab === 'recordings') loadRecordings()
+    if (activeTab === 'files' && !filesLoaded.current) loadFiles()
+    if (activeTab === 'recordings' && !recordingsLoaded.current) loadRecordings()
   }, [activeTab])
 
   async function loadFiles() {
@@ -57,6 +59,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
       if (res.ok) {
         const data = await res.json()
         setFiles(data.files || [])
+        filesLoaded.current = true
       }
     } catch { /* non-critical */ }
   }
@@ -67,6 +70,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
       if (res.ok) {
         const data = await res.json()
         setRecordings(data.recordings || [])
+        recordingsLoaded.current = true
       }
     } catch { /* non-critical */ }
   }
@@ -142,6 +146,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search notes…"
+                  data-search-input
                   className="h-8 w-full rounded-md border border-neutral-200 bg-white pl-8 pr-3 text-xs text-neutral-700 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-violet-400"
                 />
               </div>

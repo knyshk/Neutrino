@@ -127,17 +127,6 @@ CRITICAL RULES — follow these without exception:
     return NextResponse.json({ error: `LLM error: ${groqRes.status} — ${err}` }, { status: 500 })
   }
 
-  console.log(
-    JSON.stringify({
-      event: 'ai_query',
-      user_id: user.id,
-      chunks_retrieved: typedChunks.length,
-      max_similarity: typedChunks[0]?.similarity ?? 0,
-      threshold_passed: true,
-      timestamp: new Date().toISOString(),
-    })
-  )
-
   return streamFromGroq(groqRes, sources)
 }
 

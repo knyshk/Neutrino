@@ -12,6 +12,7 @@ export function AIChat() {
   const [initializing, setInitializing] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [confirmClear, setConfirmClear] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -159,7 +160,8 @@ export function AIChat() {
   }
 
   async function handleClearHistory() {
-    if (!confirm('Clear your entire chat history? This cannot be undone.')) return
+    if (!confirmClear) { setConfirmClear(true); return }
+    setConfirmClear(false)
     try {
       await fetch('/api/ai-session', { method: 'DELETE' })
       setMessages([])
@@ -188,10 +190,15 @@ export function AIChat() {
         <div className="flex items-center justify-end px-2 pt-1.5">
           <button
             onClick={handleClearHistory}
-            className="flex items-center gap-1 text-[10px] text-neutral-400 hover:text-red-400 transition-colors"
+            onBlur={() => setConfirmClear(false)}
+            className={cn(
+              'flex items-center gap-1 text-[10px] transition-colors',
+              confirmClear ? 'text-red-500' : 'text-neutral-400 hover:text-red-400'
+            )}
+            title={confirmClear ? 'Click again to confirm' : 'Clear history'}
           >
             <Trash2 size={10} />
-            Clear history
+            {confirmClear ? 'Confirm clear?' : 'Clear history'}
           </button>
         </div>
       )}

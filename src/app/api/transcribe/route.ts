@@ -128,16 +128,6 @@ export async function POST(request: NextRequest) {
     // Embed the transcript
     embedTranscriptInBackground(supabase, recording.id, user.id, title, transcript)
 
-    console.log(
-      JSON.stringify({
-        event: 'transcription',
-        recording_id: recording.id,
-        file_size_mb: (audioFile.size / (1024 * 1024)).toFixed(2),
-        success: true,
-        timestamp: new Date().toISOString(),
-      })
-    )
-
     return NextResponse.json({ recording: { ...recording, transcription_status: 'done', transcript }, note })
   } catch (error) {
     const errorMessage = String(error)
@@ -150,16 +140,6 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', recording.id)
-
-    console.error(
-      JSON.stringify({
-        event: 'transcription',
-        recording_id: recording.id,
-        success: false,
-        error: errorMessage,
-        timestamp: new Date().toISOString(),
-      })
-    )
 
     return NextResponse.json(
       {
