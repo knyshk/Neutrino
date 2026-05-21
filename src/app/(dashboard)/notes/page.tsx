@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Sidebar } from '@/components/sidebar/sidebar'
 import { TipTapEditor } from '@/components/editor/tiptap-editor'
@@ -10,6 +10,7 @@ import { Note, Recording } from '@/types'
 import { FileText, Sparkles, Share2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Spinner } from '@/components/ui/spinner'
+import { CollabUser, getUserColor } from '@/lib/collaboration/supabase-provider'
 
 export default function NotesPage() {
   return (
@@ -22,7 +23,7 @@ export default function NotesPage() {
 function NotesPageInner() {
   const { notes, setNotes, addNote, updateNote, activeNoteId, getActiveNote, setLoading, isLoading, setActiveNote } =
     useNotesStore()
-  const [userEmail, setUserEmail] = useState<string | undefined>()
+  const [currentUser, setCurrentUser] = useState<CollabUser | undefined>()
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -30,31 +31,39 @@ function NotesPageInner() {
       setLoading(true)
       try {
         const supabase = createClient()
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        setUserEmail(user?.email)
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (user) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('display_name')
+            .eq('id', user.id)
+            .single()
+
+          setCurrentUser({
+            name: profile?.display_name || user.email?.split('@')[0] || 'Anonymous',
+            email: user.email || '',
+            color: getUserColor(user.id),
+          })
+        }
 
         const [activeRes, trashedRes] = await Promise.all([
           fetch('/api/notes'),
           fetch('/api/notes?include_deleted=true'),
         ])
-        const allNotes: import('@/types').Note[] = []
+        const allNotes: Note[] = []
         if (activeRes.ok) {
           const { notes } = await activeRes.json()
           allNotes.push(...notes)
         }
         if (trashedRes.ok) {
           const { notes: trashed } = await trashedRes.json()
-          allNotes.push(...trashed.filter((n: import('@/types').Note) => n.is_deleted))
+          allNotes.push(...trashed.filter((n: Note) => n.is_deleted))
         }
         setNotes(allNotes)
 
-        // Auto-select note from ?note= query param
         const noteParam = searchParams.get('note')
-        if (noteParam) {
-          setActiveNote(noteParam)
-        }
+        if (noteParam) setActiveNote(noteParam)
       } finally {
         setLoading(false)
       }
@@ -69,7 +78,6 @@ function NotesPageInner() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: 'Untitled Note' }),
     })
-
     if (res.ok) {
       const { note } = await res.json()
       addNote(note)
@@ -77,18 +85,13 @@ function NotesPageInner() {
     }
   }, [addNote])
 
-  // Keyboard shortcuts
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const meta = e.metaKey || e.ctrlKey
-      if (meta && e.key === 'n') {
-        e.preventDefault()
-        handleNewNote()
-      }
+      if (meta && e.key === 'n') { e.preventDefault(); handleNewNote() }
       if (meta && e.key === 'k') {
         e.preventDefault()
-        const searchInput = document.querySelector<HTMLInputElement>('[data-search-input]')
-        searchInput?.focus()
+        document.querySelector<HTMLInputElement>('[data-search-input]')?.focus()
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -97,13 +100,11 @@ function NotesPageInner() {
 
   async function handleSaveNote(content: Record<string, unknown>, contentText: string) {
     if (!activeNoteId) return
-
     const res = await fetch(`/api/notes/${activeNoteId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, content_text: contentText }),
     })
-
     if (res.ok) {
       const { note } = await res.json()
       updateNote(activeNoteId, {
@@ -132,8 +133,7 @@ function NotesPageInner() {
 
   return (
     <div className="flex h-full">
-      <Sidebar onNewNote={handleNewNote} onTranscriptReady={handleTranscriptReady} userEmail={userEmail} />
-
+      <Sidebar onNewNote={handleNewNote} onTranscriptReady={handleTranscriptReady} userEmail={currentUser?.email} />
       <main className="flex flex-1 flex-col overflow-hidden bg-white">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">
@@ -144,6 +144,7 @@ function NotesPageInner() {
         ) : (
           <NoteWorkspace
             note={activeNote}
+            currentUser={currentUser}
             onSave={handleSaveNote}
             onUpdateTitle={handleUpdateTitle}
           />
@@ -155,28 +156,36 @@ function NotesPageInner() {
 
 function NoteWorkspace({
   note,
+  currentUser,
   onSave,
   onUpdateTitle,
 }: {
   note: Note
+  currentUser?: CollabUser
   onSave: (content: Record<string, unknown>, contentText: string) => Promise<void>
   onUpdateTitle: (noteId: string, title: string) => Promise<void>
 }) {
   const [title, setTitle] = useState(note.title)
   const [shareOpen, setShareOpen] = useState(false)
-  const titleDebounce = useState<ReturnType<typeof setTimeout> | null>(null)
+  const titleDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     setTitle(note.title)
   }, [note.id, note.title])
 
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current)
+    }
+  }, [])
+
   function handleTitleChange(value: string) {
     setTitle(value)
-    if (titleDebounce[0]) clearTimeout(titleDebounce[0])
-    const t = setTimeout(() => {
+    if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current)
+    titleDebounceRef.current = setTimeout(() => {
       onUpdateTitle(note.id, value || 'Untitled Note')
     }, 1000)
-    titleDebounce[1](t)
   }
 
   return (
@@ -192,34 +201,22 @@ function NoteWorkspace({
         <button
           onClick={() => setShareOpen(true)}
           className="flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-violet-300 hover:text-violet-600 transition-colors"
-          title="Share note"
         >
           <Share2 size={13} />
           Share
         </button>
       </div>
       <div className="flex-1 overflow-hidden">
-        <TipTapEditor key={note.id} note={note} onSave={onSave} />
+        <TipTapEditor key={note.id} note={note} onSave={onSave} currentUser={currentUser} />
       </div>
-
       {shareOpen && (
-        <ShareModal
-          noteId={note.id}
-          noteTitle={title || note.title}
-          onClose={() => setShareOpen(false)}
-        />
+        <ShareModal noteId={note.id} noteTitle={title || note.title} onClose={() => setShareOpen(false)} />
       )}
     </div>
   )
 }
 
-function EmptyState({
-  onNewNote,
-  hasNotes,
-}: {
-  onNewNote: () => void
-  hasNotes: boolean
-}) {
+function EmptyState({ onNewNote, hasNotes }: { onNewNote: () => void; hasNotes: boolean }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center p-8">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50">
@@ -230,12 +227,11 @@ function EmptyState({
           {hasNotes ? 'Select a note' : 'Your workspace is empty'}
         </h2>
         <p className="mt-1 text-sm text-neutral-500">
-          {hasNotes
-            ? 'Choose a note from the sidebar or create a new one'
-            : 'Create your first note to get started'}
+          {hasNotes ? 'Choose a note from the sidebar or create a new one' : 'Create your first note to get started'}
         </p>
-        <p className="mt-1 text-xs text-neutral-400">
-          <kbd className="rounded border border-neutral-200 px-1 py-0.5 text-[10px] font-mono">⌘N</kbd> new note &nbsp;·&nbsp;
+        <p className="mt-2 text-xs text-neutral-400">
+          <kbd className="rounded border border-neutral-200 px-1 py-0.5 text-[10px] font-mono">⌘N</kbd> new note
+          &nbsp;·&nbsp;
           <kbd className="rounded border border-neutral-200 px-1 py-0.5 text-[10px] font-mono">⌘K</kbd> search
         </p>
       </div>

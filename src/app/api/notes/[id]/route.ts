@@ -76,9 +76,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     .single()
 
   if (ownNote) {
-    // Owner can update all fields including is_deleted
+    // Owner can update all fields including is_deleted and is_public
     const updates: Record<string, unknown> = {}
     if (body.is_deleted !== undefined) updates.is_deleted = body.is_deleted
+    if (body.is_public !== undefined) updates.is_public = Boolean(body.is_public)
     if (body.title !== undefined) updates.title = body.title
     if (body.content !== undefined) {
       updates.content = body.content

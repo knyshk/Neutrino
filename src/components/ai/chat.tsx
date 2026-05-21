@@ -15,6 +15,7 @@ export function AIChat() {
   const [confirmClear, setConfirmClear] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     async function loadSession() {
@@ -55,13 +56,23 @@ export function AIChat() {
     }, 800)
   }
 
+  // Cancel any in-flight stream on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort() }
+  }, [])
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     const question = input.trim()
     if (!question || loading) return
 
+    // Abort any previous in-flight request
+    abortRef.current?.abort()
+    abortRef.current = new AbortController()
+
     setInput('')
     setError(null)
+    setLoading(true)
 
     const userMsg: AIMessage = {
       id: crypto.randomUUID(),
@@ -72,7 +83,6 @@ export function AIChat() {
 
     const messagesWithUser = [...messages, userMsg]
     setMessages(messagesWithUser)
-    setLoading(true)
 
     // Placeholder for the streaming assistant message
     const assistantId = crypto.randomUUID()
@@ -93,6 +103,7 @@ export function AIChat() {
           question,
           conversation_history: messages.slice(-10),
         }),
+        signal: abortRef.current.signal,
       })
 
       if (!res.ok) {
@@ -146,6 +157,8 @@ export function AIChat() {
       })
       persistMessages(finalMessages, sessionId)
     } catch (err) {
+      // AbortError means user navigated away — don't show error
+      if (err instanceof Error && err.name === 'AbortError') return
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId

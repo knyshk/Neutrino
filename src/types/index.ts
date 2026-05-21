@@ -17,6 +17,7 @@ export interface Note {
   file_id: string | null
   is_deleted: boolean
   is_shared?: boolean
+  is_public?: boolean
   created_at: string
   updated_at: string
 }
