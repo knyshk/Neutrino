@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Mic, Square, Pause, Play, Loader2, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react'
+import { Mic, Square, Pause, Play, Loader2, AlertCircle, CheckCircle, RotateCcw, Trash2 } from 'lucide-react'
 import { Recording, Note } from '@/types'
 import { formatDuration, cn } from '@/lib/utils'
 
@@ -233,11 +233,15 @@ export function Recorder({ onTranscriptReady }: RecorderProps) {
 export function RecordingListItem({
   recording,
   onRetry,
+  onDelete,
 }: {
   recording: Recording
   onRetry?: (updated: Recording, note: Note | null) => void
+  onDelete?: (id: string) => void
 }) {
   const [retrying, setRetrying] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [status, setStatus] = useState(recording.transcription_status)
 
   async function handleRetry() {
@@ -256,6 +260,16 @@ export function RecordingListItem({
       setStatus('failed')
     } finally {
       setRetrying(false)
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      await fetch(`/api/recordings/${recording.id}`, { method: 'DELETE' })
+      onDelete?.(recording.id)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -278,6 +292,18 @@ export function RecordingListItem({
           {retrying ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
         </button>
       )}
+      <button
+        onClick={() => {
+          if (!confirmDelete) { setConfirmDelete(true); return }
+          handleDelete()
+        }}
+        onBlur={() => setConfirmDelete(false)}
+        disabled={deleting}
+        className={cn('hidden group-hover:flex items-center transition-colors', confirmDelete ? 'text-red-500' : 'text-neutral-400 hover:text-red-400')}
+        title={confirmDelete ? 'Click again to confirm' : 'Delete recording'}
+      >
+        {deleting ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+      </button>
     </div>
   )
 }

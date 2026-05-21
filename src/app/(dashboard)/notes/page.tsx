@@ -7,7 +7,7 @@ import { TipTapEditor } from '@/components/editor/tiptap-editor'
 import { ShareModal } from '@/components/collaboration/share-modal'
 import { useNotesStore } from '@/store/notes-store'
 import { Note, Recording } from '@/types'
-import { FileText, Sparkles, Share2 } from 'lucide-react'
+import { FileText, Sparkles, Share2, Copy } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Spinner } from '@/components/ui/spinner'
 import { CollabUser, getUserColor } from '@/lib/collaboration/supabase-provider'
@@ -129,6 +129,23 @@ function NotesPageInner() {
     useNotesStore.getState().setActiveNote(note.id)
   }
 
+  async function handleDuplicateNote(note: Note) {
+    const res = await fetch('/api/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: `${note.title} (copy)`,
+        content: note.content,
+        content_text: note.content_text,
+      }),
+    })
+    if (res.ok) {
+      const { note: newNote } = await res.json()
+      addNote(newNote)
+      useNotesStore.getState().setActiveNote(newNote.id)
+    }
+  }
+
   const activeNote = getActiveNote()
 
   return (
@@ -147,6 +164,7 @@ function NotesPageInner() {
             currentUser={currentUser}
             onSave={handleSaveNote}
             onUpdateTitle={handleUpdateTitle}
+            onDuplicate={() => handleDuplicateNote(activeNote)}
           />
         )}
       </main>
@@ -159,11 +177,13 @@ function NoteWorkspace({
   currentUser,
   onSave,
   onUpdateTitle,
+  onDuplicate,
 }: {
   note: Note
   currentUser?: CollabUser
   onSave: (content: Record<string, unknown>, contentText: string) => Promise<void>
   onUpdateTitle: (noteId: string, title: string) => Promise<void>
+  onDuplicate: () => void
 }) {
   const [title, setTitle] = useState(note.title)
   const [shareOpen, setShareOpen] = useState(false)
@@ -198,6 +218,14 @@ function NoteWorkspace({
           placeholder="Untitled Note"
           className="flex-1 text-2xl font-bold text-neutral-900 placeholder-neutral-300 focus:outline-none bg-transparent"
         />
+        <button
+          onClick={() => onDuplicate()}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-neutral-300 hover:text-neutral-800 transition-colors"
+          title="Duplicate note"
+        >
+          <Copy size={13} />
+          Duplicate
+        </button>
         <button
           onClick={() => setShareOpen(true)}
           className="flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-violet-300 hover:text-violet-600 transition-colors"

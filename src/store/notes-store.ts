@@ -58,15 +58,12 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 
   getFilteredNotes: () => {
     const { notes, searchQuery } = get()
-    if (!searchQuery.trim()) return notes.filter((n) => !n.is_deleted)
-
-    const q = searchQuery.toLowerCase()
-    return notes.filter(
-      (n) =>
-        !n.is_deleted &&
-        (n.title.toLowerCase().includes(q) ||
-          (n.content_text?.toLowerCase().includes(q) ?? false))
+    const active = notes.filter((n) => !n.is_deleted)
+    const filtered = !searchQuery.trim() ? active : active.filter(
+      (n) => n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (n.content_text?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
     )
+    return [...filtered.filter((n) => n.is_pinned), ...filtered.filter((n) => !n.is_pinned)]
   },
 
   getTrashedNotes: () => get().notes.filter((n) => n.is_deleted),

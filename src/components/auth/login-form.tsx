@@ -122,6 +122,11 @@ export function LoginForm() {
               required
               autoComplete="current-password"
             />
+            <div className="flex justify-end">
+              <Link href="/forgot-password" className="text-xs text-neutral-500 hover:text-violet-600">
+                Forgot password?
+              </Link>
+            </div>
 
             {error && (
               <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>

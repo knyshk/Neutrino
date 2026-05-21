@@ -12,7 +12,11 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Settings,
+  Loader2,
+  X,
 } from 'lucide-react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useNotesStore } from '@/store/notes-store'
 import { useUIStore } from '@/store/ui-store'
@@ -45,6 +49,8 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
 
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [recordings, setRecordings] = useState<Recording[]>([])
+  const [filesLoading, setFilesLoading] = useState(false)
+  const [recordingsLoading, setRecordingsLoading] = useState(false)
   const filesLoaded = useRef(false)
   const recordingsLoaded = useRef(false)
 
@@ -54,6 +60,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
   }, [activeTab])
 
   async function loadFiles() {
+    setFilesLoading(true)
     try {
       const res = await fetch('/api/upload')
       if (res.ok) {
@@ -61,10 +68,13 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
         setFiles(data.files || [])
         filesLoaded.current = true
       }
-    } catch { /* non-critical */ }
+    } catch { /* non-critical */ } finally {
+      setFilesLoading(false)
+    }
   }
 
   async function loadRecordings() {
+    setRecordingsLoading(true)
     try {
       const res = await fetch('/api/transcribe')
       if (res.ok) {
@@ -72,7 +82,9 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
         setRecordings(data.recordings || [])
         recordingsLoaded.current = true
       }
-    } catch { /* non-critical */ }
+    } catch { /* non-critical */ } finally {
+      setRecordingsLoading(false)
+    }
   }
 
   async function handleLogout() {
@@ -147,8 +159,19 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search notes…"
                   data-search-input
-                  className="h-8 w-full rounded-md border border-neutral-200 bg-white pl-8 pr-3 text-xs text-neutral-700 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-violet-400"
+                  className={cn(
+                    'h-8 w-full rounded-md border border-neutral-200 bg-white pl-8 text-xs text-neutral-700 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-violet-400',
+                    searchQuery ? 'pr-6' : 'pr-3'
+                  )}
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                  >
+                    <X size={11} />
+                  </button>
+                )}
               </div>
               <button
                 onClick={onNewNote}
@@ -171,6 +194,18 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
                 setFiles((prev) => [file, ...prev])
               }}
             />
+            {filesLoading && (
+              <div className="flex justify-center py-4">
+                <Loader2 size={16} className="animate-spin text-neutral-400" />
+              </div>
+            )}
+            {!filesLoading && files.length === 0 && (
+              <div className="px-3 py-4 text-center">
+                <Upload size={20} className="mx-auto mb-2 text-neutral-300" />
+                <p className="text-xs text-neutral-400">No files yet</p>
+                <p className="text-[10px] text-neutral-400 mt-0.5">Drop a PDF, DOCX, or TXT above</p>
+              </div>
+            )}
             {files.length > 0 && (
               <div className="flex-1 overflow-y-auto">
                 <p className="px-3 pt-1 pb-0.5 text-[10px] font-medium uppercase tracking-wide text-neutral-400">
@@ -199,6 +234,18 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
                 onTranscriptReady(recording, note)
               }}
             />
+            {recordingsLoading && (
+              <div className="flex justify-center py-4">
+                <Loader2 size={16} className="animate-spin text-neutral-400" />
+              </div>
+            )}
+            {!recordingsLoading && recordings.length === 0 && (
+              <div className="px-3 py-4 text-center">
+                <Mic size={20} className="mx-auto mb-2 text-neutral-300" />
+                <p className="text-xs text-neutral-400">No recordings yet</p>
+                <p className="text-[10px] text-neutral-400 mt-0.5">Record a meeting or voice note above</p>
+              </div>
+            )}
             {recordings.length > 0 && (
               <div className="flex-1 overflow-y-auto">
                 <p className="px-3 pt-2 pb-0.5 text-[10px] font-medium uppercase tracking-wide text-neutral-400">
@@ -212,6 +259,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
                       setRecordings((prev) => prev.map((x) => x.id === updated.id ? updated : x))
                       if (note) onTranscriptReady(updated, note)
                     }}
+                    onDelete={(id) => setRecordings((prev) => prev.filter((x) => x.id !== id))}
                   />
                 ))}
               </div>
@@ -228,6 +276,10 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
 
       {/* Footer */}
       <div className="border-t border-neutral-100 p-2">
+        <Link href="/settings" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700 transition-colors">
+          <Settings size={13} />
+          Settings
+        </Link>
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700 transition-colors"

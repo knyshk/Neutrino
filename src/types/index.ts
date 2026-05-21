@@ -18,6 +18,7 @@ export interface Note {
   is_deleted: boolean
   is_shared?: boolean
   is_public?: boolean
+  is_pinned?: boolean
   created_at: string
   updated_at: string
 }

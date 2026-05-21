@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, Mic, Upload, RotateCcw, Trash2, Users } from 'lucide-react'
+import { FileText, Mic, Upload, RotateCcw, Trash2, Users, Pin } from 'lucide-react'
 import { useNotesStore } from '@/store/notes-store'
 import { Note } from '@/types'
 import { formatDate, truncate } from '@/lib/utils'
@@ -13,6 +13,15 @@ export function NoteList() {
   const { getFilteredNotes, getTrashedNotes, activeNoteId, setActiveNote, showTrash, setShowTrash, updateNote, removeNote, isLoading } = useNotesStore()
   const notes = showTrash ? getTrashedNotes() : getFilteredNotes()
   const { success: toastSuccess, error: toastError } = useToast()
+
+  async function handlePin(note: Note) {
+    await fetch(`/api/notes/${note.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_pinned: !note.is_pinned }),
+    })
+    updateNote(note.id, { is_pinned: !note.is_pinned })
+  }
 
   async function handleRestore(note: Note) {
     await fetch(`/api/notes/${note.id}`, {
@@ -84,6 +93,7 @@ export function NoteList() {
               note={note}
               isActive={note.id === activeNoteId}
               onClick={() => setActiveNote(note.id)}
+              onPin={() => handlePin(note)}
             />
           )
         )}
@@ -96,10 +106,12 @@ function NoteListItem({
   note,
   isActive,
   onClick,
+  onPin,
 }: {
   note: Note
   isActive: boolean
   onClick: () => void
+  onPin?: () => void
 }) {
   const SourceIcon = {
     manual: FileText,
@@ -131,6 +143,13 @@ function NoteListItem({
             <Users size={9} className="shrink-0 text-violet-400" />
           </span>
         )}
+        <button
+          onClick={(e) => { e.stopPropagation(); onPin?.() }}
+          className="hidden group-hover:flex text-neutral-300 hover:text-amber-400 transition-colors ml-auto shrink-0"
+          title={note.is_pinned ? 'Unpin' : 'Pin note'}
+        >
+          {note.is_pinned ? <Pin size={9} className="text-amber-400" /> : <Pin size={9} />}
+        </button>
       </div>
       <div className="flex items-center justify-between gap-2">
         <span className="truncate text-[11px] text-neutral-400">{preview}</span>
