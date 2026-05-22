@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('notes')
-    .select('*')
+    .select('id, user_id, title, content, content_text, source_type, recording_id, file_id, is_deleted, is_public, is_pinned, color, parent_id, created_at, updated_at')
     .eq('user_id', user.id)
     .order('updated_at', { ascending: false })
 
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     let sharedQuery = serviceClient
       .from('notes')
-      .select('*')
+      .select('id, user_id, title, content, content_text, source_type, recording_id, file_id, is_deleted, is_public, is_pinned, color, parent_id, created_at, updated_at')
       .in('id', sharedNoteIds)
 
     if (includeDeleted) {
@@ -103,16 +103,20 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const title = body.title || 'Untitled Note'
+  const { title: rawTitle, content, content_text, source_type, recording_id, file_id, parent_id } = body
+  const title = rawTitle || 'Untitled Note'
 
   const { data: note, error } = await supabase
     .from('notes')
     .insert({
       user_id: user.id,
       title,
-      content: null,
-      content_text: null,
-      source_type: 'manual',
+      content: content ?? null,
+      content_text: content_text ?? null,
+      source_type: source_type ?? 'manual',
+      recording_id: recording_id ?? null,
+      file_id: file_id ?? null,
+      parent_id: parent_id ?? null,
     })
     .select()
     .single()

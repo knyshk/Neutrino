@@ -82,6 +82,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (body.is_public !== undefined) updates.is_public = Boolean(body.is_public)
     if (body.is_pinned !== undefined) updates.is_pinned = Boolean(body.is_pinned)
     if ('color' in body) updates.color = body.color ?? null
+    if ('parent_id' in body) updates.parent_id = body.parent_id ?? null
     if (body.title !== undefined) updates.title = body.title
     if (body.content !== undefined) {
       updates.content = body.content

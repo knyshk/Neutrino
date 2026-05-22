@@ -154,10 +154,13 @@ function NoteListItem({
   const readMins = Math.max(1, Math.round(words / 200))
 
   return (
-    <button
+    <div
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onClick()}
       className={cn(
-        'flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors',
+        'flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors cursor-pointer',
         isActive
           ? 'bg-violet-50 border-r-2 border-violet-600'
           : 'hover:bg-neutral-100'
@@ -192,7 +195,7 @@ function NoteListItem({
         <span className="shrink-0 text-[10px] text-neutral-300">{formatDate(note.updated_at)}</span>
       </div>
       <span className="text-[10px] text-neutral-400">{readMins} min read</span>
-    </button>
+    </div>
   )
 }
 

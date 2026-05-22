@@ -48,8 +48,11 @@ interface SidebarProps {
 export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProps) {
   const router = useRouter()
   const { sidebarOpen, toggleSidebar, activeTab, setActiveTab } = useUIStore()
-  const { searchQuery, setSearchQuery } = useNotesStore()
+  const { searchQuery, setSearchQuery, activeNoteId } = useNotesStore()
   const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
 
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [recordings, setRecordings] = useState<Recording[]>([])
@@ -273,7 +276,13 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
 
         {activeTab === 'ai' && (
           <div className="flex-1 overflow-hidden flex flex-col">
-            <AIChat />
+            {activeNoteId && (
+              <div className="px-3 py-2 border-b border-neutral-100 dark:border-neutral-800 text-[10px] text-neutral-400 dark:text-neutral-500 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
+                Chatting about this note
+              </div>
+            )}
+            <AIChat noteId={activeNoteId ?? undefined} />
           </div>
         )}
       </div>
@@ -285,13 +294,17 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
             <Settings size={13} />
             Settings
           </Link>
-          <button
-            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
-            title={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {resolvedTheme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
-          </button>
+          {mounted ? (
+            <button
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+              title={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {resolvedTheme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+            </button>
+          ) : (
+            <button className="h-7 w-7 rounded-md" />
+          )}
         </div>
         <button
           onClick={handleLogout}

@@ -20,6 +20,8 @@ export interface Note {
   is_public?: boolean
   is_pinned?: boolean
   color?: string | null
+  parent_id?: string | null
+  children?: Note[] // populated client-side for tree rendering
   created_at: string
   updated_at: string
 }

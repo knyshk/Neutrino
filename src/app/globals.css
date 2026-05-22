@@ -2,11 +2,6 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-.dark body {
-  background-color: rgb(10 10 10);
-  color: rgb(250 250 250);
-}
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -18,6 +13,57 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.dark {
+  --bg-primary: #191919;
+  --bg-sidebar: #1f1f1f;
+  --bg-card: #252525;
+  --border: #2d2d2d;
+  --text-primary: #e8e8e8;
+  --text-secondary: #8b8b8b;
+  --text-muted: #5a5a5a;
+}
+
+.dark body {
+  background-color: #191919;
+  color: #e8e8e8;
+}
+
+/* Editor dark */
+.dark .ProseMirror {
+  color: #e8e8e8;
+  background: #191919;
+}
+
+.dark .ProseMirror h1,
+.dark .ProseMirror h2,
+.dark .ProseMirror h3 {
+  color: #f0f0f0;
+}
+
+.dark .ProseMirror a {
+  color: #a78bfa;
+}
+
+.dark .ProseMirror code {
+  background: #2d2d2d;
+  color: #e8e8e8;
+}
+
+.dark .ProseMirror pre {
+  background: #1a1a1a;
+  border: 1px solid #333;
+}
+
+.dark .ProseMirror blockquote {
+  border-left-color: #7c3aed;
+  color: #8b8b8b;
+}
+
+.dark .prose-neutral {
+  --tw-prose-body: #e8e8e8;
+  --tw-prose-headings: #f0f0f0;
 }
 
 /* TipTap editor styles */
@@ -165,6 +211,9 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+.dark ::-webkit-scrollbar-thumb { background: #3a3a3a; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #555; }
 
 @media print {
   body * { visibility: hidden; }

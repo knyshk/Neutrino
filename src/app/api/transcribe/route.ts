@@ -111,18 +111,34 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', recording.id)
 
+    // Build TipTap JSON from transcript text
+    // Split by newlines into paragraphs
+    const paragraphs = transcript
+      .split(/\n+/)
+      .filter((line: string) => line.trim().length > 0)
+      .map((line: string) => ({
+        type: 'paragraph',
+        content: [{ type: 'text', text: line.trim() }]
+      }))
+
+    const tiptapContent = {
+      type: 'doc',
+      content: paragraphs.length > 0 ? paragraphs : [{ type: 'paragraph' }]
+    }
+
     // Create a note from the transcript
     const { data: note } = await supabase
       .from('notes')
       .insert({
         user_id: user.id,
         title,
-        content: null,
+        content: tiptapContent,
         content_text: transcript,
         source_type: 'recording',
         recording_id: recording.id,
+        parent_id: null,
       })
-      .select()
+      .select('id, user_id, title, content, content_text, source_type, recording_id, file_id, is_deleted, is_public, is_pinned, color, parent_id, created_at, updated_at')
       .single()
 
     // Embed the transcript

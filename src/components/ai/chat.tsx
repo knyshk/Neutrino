@@ -1,11 +1,15 @@
 'use client'
 
-import { useState, useRef, useEffect, FormEvent } from 'react'
+import { useState, useRef, useEffect, useCallback, FormEvent } from 'react'
 import { Send, Loader2, MessageSquare, ChevronDown, ChevronUp, BookOpen, Trash2 } from 'lucide-react'
 import { AIMessage, SourceAttribution } from '@/types'
 import { cn } from '@/lib/utils'
 
-export function AIChat() {
+interface AIChatProps {
+  noteId?: string
+}
+
+export function AIChat({ noteId }: AIChatProps) {
   const [messages, setMessages] = useState<AIMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -17,23 +21,35 @@ export function AIChat() {
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
-  useEffect(() => {
-    async function loadSession() {
-      try {
-        const res = await fetch('/api/ai-session')
-        if (res.ok) {
-          const data = await res.json()
-          if (data.session) {
-            setMessages(data.session.messages || [])
-            setSessionId(data.session.id)
-          }
+  const sessionUrl = noteId
+    ? `/api/ai-session?scope_type=note&scope_id=${noteId}`
+    : '/api/ai-session'
+
+  const loadSession = useCallback(async () => {
+    try {
+      const res = await fetch(sessionUrl)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.session) {
+          setMessages(data.session.messages || [])
+          setSessionId(data.session.id)
+        } else {
+          setMessages([])
+          setSessionId(null)
         }
-      } catch { /* non-critical */ } finally {
-        setInitializing(false)
       }
+    } catch { /* non-critical */ } finally {
+      setInitializing(false)
     }
+  }, [sessionUrl])
+
+  // Reload session when noteId changes
+  useEffect(() => {
+    setMessages([])
+    setSessionId(null)
+    setInitializing(true)
     loadSession()
-  }, [])
+  }, [noteId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -46,7 +62,12 @@ export function AIChat() {
         const res = await fetch('/api/ai-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: updatedMessages, session_id: sid }),
+          body: JSON.stringify({
+            messages: updatedMessages,
+            session_id: sid,
+            scope_type: noteId ? 'note' : 'all',
+            scope_id: noteId ?? null,
+          }),
         })
         if (res.ok && !sid) {
           const data = await res.json()
@@ -102,6 +123,7 @@ export function AIChat() {
         body: JSON.stringify({
           question,
           conversation_history: messages.slice(-10),
+          ...(noteId ? { scope_type: 'note', scope_id: noteId } : {}),
         }),
         signal: abortRef.current.signal,
       })
@@ -176,7 +198,7 @@ export function AIChat() {
     if (!confirmClear) { setConfirmClear(true); return }
     setConfirmClear(false)
     try {
-      await fetch('/api/ai-session', { method: 'DELETE' })
+      await fetch(sessionUrl, { method: 'DELETE' })
       setMessages([])
       setSessionId(null)
     } catch { /* non-critical */ }
@@ -220,9 +242,13 @@ export function AIChat() {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4 pb-8">
             <MessageSquare size={28} className="mb-3 text-neutral-300" />
-            <p className="text-xs font-medium text-neutral-600">Ask anything about your notes</p>
+            <p className="text-xs font-medium text-neutral-600">
+              {noteId ? 'Ask about this note' : 'Ask anything about your notes'}
+            </p>
             <p className="mt-1 text-[10px] text-neutral-400 leading-relaxed">
-              Questions are answered using your notes, recordings, and uploaded files.
+              {noteId
+                ? 'Questions are answered using the content of this note.'
+                : 'Questions are answered using your notes, recordings, and uploaded files.'}
             </p>
           </div>
         )}

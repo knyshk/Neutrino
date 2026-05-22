@@ -8,6 +8,7 @@ interface NotesState {
   searchQuery: string
   showTrash: boolean
   sortOrder: 'updated' | 'created' | 'alpha'
+  expandedNotes: Set<string>
   setNotes: (notes: Note[]) => void
   addNote: (note: Note) => void
   updateNote: (id: string, updates: Partial<Note>) => void
@@ -17,9 +18,11 @@ interface NotesState {
   setSearchQuery: (query: string) => void
   setShowTrash: (show: boolean) => void
   setSortOrder: (order: 'updated' | 'created' | 'alpha') => void
+  toggleExpanded: (noteId: string) => void
   getActiveNote: () => Note | undefined
   getFilteredNotes: () => Note[]
   getTrashedNotes: () => Note[]
+  getChildNotes: (parentId: string) => Note[]
 }
 
 export const useNotesStore = create<NotesState>((set, get) => ({
@@ -29,6 +32,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   searchQuery: '',
   showTrash: false,
   sortOrder: 'updated',
+  expandedNotes: new Set<string>(),
 
   setNotes: (notes) => set({ notes }),
 
@@ -56,6 +60,13 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 
   setSortOrder: (order) => set({ sortOrder: order }),
 
+  toggleExpanded: (noteId) => set((state) => {
+    const next = new Set(state.expandedNotes)
+    if (next.has(noteId)) next.delete(noteId)
+    else next.add(noteId)
+    return { expandedNotes: next }
+  }),
+
   getActiveNote: () => {
     const { notes, activeNoteId } = get()
     return notes.find((n) => n.id === activeNoteId)
@@ -63,12 +74,18 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 
   getFilteredNotes: () => {
     const { notes, searchQuery, sortOrder } = get()
-    const active = notes.filter((n) => !n.is_deleted)
-    const filtered = !searchQuery.trim() ? active : active.filter(
-      (n) => n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (n.content_text?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
-    )
-    const sorted = [...filtered].sort((a, b) => {
+    const active = notes.filter((n) => !n.is_deleted && !n.parent_id)
+
+    // If searching, return ALL matching notes (including subpages) so results are visible
+    if (searchQuery.trim()) {
+      const allActive = notes.filter(n => !n.is_deleted)
+      return allActive.filter(
+        (n) => n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (n.content_text?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+      )
+    }
+
+    const sorted = [...active].sort((a, b) => {
       if (sortOrder === 'alpha') {
         return (a.title || '').localeCompare(b.title || '')
       } else if (sortOrder === 'created') {
@@ -81,4 +98,8 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   },
 
   getTrashedNotes: () => get().notes.filter((n) => n.is_deleted),
+
+  getChildNotes: (parentId) => {
+    return get().notes.filter(n => n.parent_id === parentId && !n.is_deleted)
+  },
 }))

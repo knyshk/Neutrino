@@ -41,7 +41,7 @@ interface ToolbarButton {
 }
 
 function Divider() {
-  return <span className="w-px h-4 bg-neutral-200 mx-1" />
+  return <span className="w-px h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
 }
 
 function ToolbarBtn({ item }: { item: ToolbarButton }) {
@@ -53,10 +53,10 @@ function ToolbarBtn({ item }: { item: ToolbarButton }) {
       onClick={item.action}
       className={cn(
         'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-        'hover:bg-neutral-100 disabled:pointer-events-none disabled:opacity-40',
+        'hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:pointer-events-none disabled:opacity-40',
         item.isActive
-          ? 'bg-violet-100 text-violet-700'
-          : 'text-neutral-600'
+          ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400'
+          : 'text-neutral-600 dark:text-neutral-400'
       )}
     >
       {item.icon}
@@ -116,8 +116,8 @@ function LinkButton({ editor }: { editor: Editor }) {
         onClick={openPopover}
         className={cn(
           'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-          'hover:bg-neutral-100',
-          editor.isActive('link') ? 'bg-violet-100 text-violet-700' : 'text-neutral-600'
+          'hover:bg-neutral-100 dark:hover:bg-neutral-800',
+          editor.isActive('link') ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400' : 'text-neutral-600 dark:text-neutral-400'
         )}
       >
         <Link2 size={15} />

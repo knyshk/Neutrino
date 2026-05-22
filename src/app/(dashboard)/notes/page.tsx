@@ -270,13 +270,13 @@ function NoteWorkspace({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center border-b border-neutral-100 bg-white px-8 pt-6 pb-2 gap-3">
+      <div className="flex items-center overflow-visible border-b border-neutral-100 bg-white px-8 pt-6 pb-2 gap-3">
         <input
           type="text"
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Untitled Note"
-          className="flex-1 text-2xl font-bold text-neutral-900 placeholder-neutral-300 focus:outline-none bg-transparent"
+          className="flex-1 min-w-0 text-2xl font-bold text-neutral-900 placeholder-neutral-300 focus:outline-none bg-transparent"
         />
         <div className="flex items-center gap-1 shrink-0" title="Note color label">
           {COLOR_OPTIONS.map((opt) => (
@@ -302,7 +302,7 @@ function NoteWorkspace({
         </div>
         <button
           onClick={() => onDuplicate()}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-neutral-300 hover:text-neutral-800 transition-colors"
+          className="relative z-10 flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-neutral-300 hover:text-neutral-800 transition-colors"
           title="Duplicate note"
         >
           <Copy size={13} />

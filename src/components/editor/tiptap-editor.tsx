@@ -80,7 +80,7 @@ export function TipTapEditor({ note, onSave, readOnly = false, currentUser }: Ti
     editable: !readOnly,
     editorProps: {
       attributes: {
-        class: 'prose prose-neutral max-w-none focus:outline-none min-h-[calc(100vh-200px)] px-8 py-6',
+        class: 'prose prose-neutral dark:prose-invert max-w-none focus:outline-none min-h-[calc(100vh-200px)] px-8 py-6',
       },
     },
     onUpdate: ({ editor }) => {
@@ -158,9 +158,9 @@ export function TipTapEditor({ note, onSave, readOnly = false, currentUser }: Ti
   const readMins = Math.max(1, Math.round(wordCount / 200))
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col dark:bg-[#191919]">
       {!readOnly && (
-        <div className="flex items-center justify-between border-b border-neutral-100 bg-white">
+        <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 bg-white dark:bg-[#1f1f1f]">
           <Toolbar editor={editor} />
           <div className="flex items-center gap-3 px-3 py-1.5 shrink-0">
             <PresenceAvatars users={remoteUsers} />
@@ -195,7 +195,7 @@ export function TipTapEditor({ note, onSave, readOnly = false, currentUser }: Ti
             </div>
             <span
               className={cn('text-xs transition-colors whitespace-nowrap', {
-                'text-neutral-400': saveStatus === 'saved',
+                'text-neutral-400 dark:text-neutral-500': saveStatus === 'saved',
                 'text-amber-500': saveStatus === 'saving' || saveStatus === 'unsaved',
               })}
             >
@@ -206,18 +206,18 @@ export function TipTapEditor({ note, onSave, readOnly = false, currentUser }: Ti
           </div>
         </div>
       )}
-      <div className="flex-1 overflow-y-auto bg-white">
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-[#191919]">
         <EditorContent editor={editor} className="h-full" />
       </div>
       {!readOnly && (
-        <div className="border-t border-neutral-100 bg-white px-8 py-1.5 flex items-center gap-3">
-          <span className="text-[10px] text-neutral-400">
+        <div className="border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-[#191919] dark:text-neutral-500 px-8 py-1.5 flex items-center gap-3">
+          <span className="text-[10px] text-neutral-400 dark:text-neutral-500">
             {wordCount} {wordCount === 1 ? 'word' : 'words'}
           </span>
-          <span className="text-[10px] text-neutral-300">·</span>
-          <span className="text-[10px] text-neutral-400">{charCount} chars</span>
-          <span className="text-[10px] text-neutral-300">·</span>
-          <span className="text-[10px] text-neutral-400">{readMins} min read</span>
+          <span className="text-[10px] text-neutral-300 dark:text-neutral-600">·</span>
+          <span className="text-[10px] text-neutral-400 dark:text-neutral-500">{charCount} chars</span>
+          <span className="text-[10px] text-neutral-300 dark:text-neutral-600">·</span>
+          <span className="text-[10px] text-neutral-400 dark:text-neutral-500">{readMins} min read</span>
         </div>
       )}
     </div>
