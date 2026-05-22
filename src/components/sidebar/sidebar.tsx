@@ -51,8 +51,41 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
   const { searchQuery, setSearchQuery, activeNoteId } = useNotesStore()
   const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(260)
+  const isResizing = useRef(false)
+  const startX = useRef(0)
+  const startWidth = useRef(0)
 
   useEffect(() => setMounted(true), [])
+
+  function startResize(e: React.MouseEvent) {
+    isResizing.current = true
+    startX.current = e.clientX
+    startWidth.current = sidebarWidth
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', stopResize)
+  }
+
+  function onMouseMove(e: MouseEvent) {
+    if (!isResizing.current) return
+    const delta = e.clientX - startX.current
+    const newWidth = Math.max(200, Math.min(480, startWidth.current + delta))
+    setSidebarWidth(newWidth)
+  }
+
+  function stopResize() {
+    isResizing.current = false
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', stopResize)
+  }
+
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', stopResize)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [recordings, setRecordings] = useState<Recording[]>([])
@@ -103,7 +136,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
 
   if (!sidebarOpen) {
     return (
-      <div className="flex h-full w-12 flex-col items-center border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 py-3">
+      <div className="flex h-full w-12 flex-col items-center border-r border-neutral-200 dark:border-[#2d2d2d] bg-neutral-50 dark:bg-[#1f1f1f] py-3">
         <button
           onClick={toggleSidebar}
           className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
@@ -116,14 +149,17 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
   }
 
   return (
-    <div className="flex h-full w-64 flex-col border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+    <div
+      className="relative flex h-full flex-col border-r border-neutral-200 dark:border-[#2d2d2d] bg-neutral-50 dark:bg-[#1f1f1f]"
+      style={{ width: sidebarWidth }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-[#2d2d2d]">
         <div className="flex items-center gap-2">
           <div className="flex h-6 w-6 items-center justify-center rounded-md bg-violet-600">
             <span className="text-xs font-bold text-white">N</span>
           </div>
-          <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-200">Neutrino</span>
+          <span className="text-sm font-semibold text-neutral-900 dark:text-[#e8e8e8]">Neutrino</span>
         </div>
         <button
           onClick={toggleSidebar}
@@ -135,7 +171,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-neutral-200 dark:border-neutral-800 px-2 pt-2">
+      <div className="flex border-b border-neutral-200 dark:border-[#2d2d2d] px-2 pt-2">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -143,8 +179,8 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
             className={cn(
               'flex flex-1 items-center justify-center gap-1 rounded-t-md px-1 py-1.5 text-xs font-medium transition-colors',
               activeTab === tab.id
-                ? 'border-b-2 border-violet-600 text-violet-700 bg-white dark:bg-neutral-800 dark:text-violet-400'
-                : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+                ? 'border-b-2 border-violet-600 text-violet-700 bg-white dark:bg-[#252525] dark:text-violet-400'
+                : 'text-neutral-500 dark:text-[#8b8b8b] hover:text-neutral-700 dark:hover:text-[#e8e8e8]'
             )}
           >
             {tab.icon}
@@ -167,7 +203,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
                   placeholder="Search notes…"
                   data-search-input
                   className={cn(
-                    'h-8 w-full rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 pl-8 text-xs text-neutral-700 dark:text-neutral-200 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-violet-400',
+                    'h-8 w-full rounded-md border border-neutral-200 dark:border-[#2d2d2d] bg-white dark:bg-[#252525] pl-8 text-xs text-neutral-700 dark:text-[#e8e8e8] placeholder-neutral-400 dark:placeholder-[#5a5a5a] focus:outline-none focus:ring-1 focus:ring-violet-400',
                     searchQuery ? 'pr-6' : 'pr-3'
                   )}
                 />
@@ -182,7 +218,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
               </div>
               <button
                 onClick={onNewNote}
-                className="flex w-full items-center gap-2 rounded-md border border-dashed border-neutral-300 dark:border-neutral-700 px-2.5 py-1.5 text-xs text-neutral-500 dark:text-neutral-400 hover:border-violet-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-950 dark:hover:text-violet-400 transition-colors"
+                className="flex w-full items-center gap-2 rounded-md border border-dashed border-neutral-300 dark:border-[#2d2d2d] px-2.5 py-1.5 text-xs text-neutral-500 dark:text-[#8b8b8b] hover:border-violet-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-950/30 dark:hover:text-violet-400 transition-colors"
               >
                 <Plus size={13} />
                 New note
@@ -277,7 +313,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
         {activeTab === 'ai' && (
           <div className="flex-1 overflow-hidden flex flex-col">
             {activeNoteId && (
-              <div className="px-3 py-2 border-b border-neutral-100 dark:border-neutral-800 text-[10px] text-neutral-400 dark:text-neutral-500 flex items-center gap-1">
+              <div className="px-3 py-2 border-b border-neutral-100 dark:border-[#2d2d2d] text-[10px] text-neutral-400 dark:text-[#5a5a5a] flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
                 Chatting about this note
               </div>
@@ -288,16 +324,16 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
       </div>
 
       {/* Footer */}
-      <div className="border-t border-neutral-200 dark:border-neutral-800 p-2">
+      <div className="border-t border-neutral-200 dark:border-[#2d2d2d] p-2">
         <div className="flex items-center gap-1">
-          <Link href="/settings" className="flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-xs text-neutral-500 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">
+          <Link href="/settings" className="flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-xs text-neutral-500 dark:text-[#8b8b8b] hover:bg-white dark:hover:bg-[#252525] hover:text-neutral-700 dark:hover:text-[#e8e8e8] transition-colors">
             <Settings size={13} />
             Settings
           </Link>
           {mounted ? (
             <button
               onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-[#8b8b8b] hover:bg-white dark:hover:bg-[#252525] hover:text-neutral-700 dark:hover:text-[#e8e8e8] transition-colors"
               title={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {resolvedTheme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
@@ -308,12 +344,19 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
         </div>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-neutral-500 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-neutral-500 dark:text-[#8b8b8b] hover:bg-white dark:hover:bg-[#252525] hover:text-neutral-700 dark:hover:text-[#e8e8e8] transition-colors"
         >
           <LogOut size={13} />
           <span className="truncate">{userEmail || 'Sign out'}</span>
         </button>
       </div>
+
+      {/* Resize handle */}
+      <div
+        onMouseDown={startResize}
+        className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-violet-400 transition-colors opacity-0 hover:opacity-100"
+        style={{ touchAction: 'none' }}
+      />
     </div>
   )
 }

@@ -162,8 +162,8 @@ function NoteListItem({
       className={cn(
         'flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors cursor-pointer',
         isActive
-          ? 'bg-violet-50 border-r-2 border-violet-600'
-          : 'hover:bg-neutral-100'
+          ? 'bg-violet-50 dark:bg-[#2d2356] border-r-2 border-violet-600'
+          : 'hover:bg-neutral-100 dark:hover:bg-[#252525]'
       )}
     >
       <div className="flex items-center gap-1.5">
@@ -174,7 +174,7 @@ function NoteListItem({
           />
         )}
         <SourceIcon size={11} className={isActive ? 'text-violet-600' : 'text-neutral-400'} />
-        <span className={cn('flex-1 truncate text-xs font-medium', isActive ? 'text-violet-700' : 'text-neutral-700')}>
+        <span className={cn('flex-1 truncate text-xs font-medium', isActive ? 'text-violet-700 dark:text-violet-400' : 'text-neutral-700 dark:text-[#e8e8e8]')}>
           {note.title || 'Untitled Note'}
         </span>
         {note.is_shared && (

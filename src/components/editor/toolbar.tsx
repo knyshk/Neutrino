@@ -123,7 +123,7 @@ function LinkButton({ editor }: { editor: Editor }) {
         <Link2 size={15} />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 bg-white border border-neutral-200 rounded-lg shadow-lg p-2 flex gap-1 min-w-[220px]">
+        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-[#252525] border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg p-2 flex gap-1 min-w-[220px]">
           <input
             ref={inputRef}
             type="url"
@@ -134,7 +134,7 @@ function LinkButton({ editor }: { editor: Editor }) {
               if (e.key === 'Escape') setOpen(false)
             }}
             placeholder="https://..."
-            className="flex-1 text-xs border border-neutral-200 rounded px-2 py-1 outline-none focus:border-violet-400 min-w-0"
+            className="flex-1 text-xs border border-neutral-200 dark:border-neutral-600 rounded px-2 py-1 outline-none focus:border-violet-400 min-w-0 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200 placeholder-neutral-400 dark:placeholder-neutral-500"
           />
           <button
             type="button"
@@ -200,12 +200,12 @@ function ImageButton({ editor }: { editor: Editor }) {
         type="button"
         title="Image"
         onClick={openPopover}
-        className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-neutral-100 text-neutral-600"
+        className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
       >
         <Image size={15} />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 bg-white border border-neutral-200 rounded-lg shadow-lg p-2 flex gap-1 min-w-[220px]">
+        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-[#252525] border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg p-2 flex gap-1 min-w-[220px]">
           <input
             ref={inputRef}
             type="url"
@@ -216,7 +216,7 @@ function ImageButton({ editor }: { editor: Editor }) {
               if (e.key === 'Escape') setOpen(false)
             }}
             placeholder="Image URL..."
-            className="flex-1 text-xs border border-neutral-200 rounded px-2 py-1 outline-none focus:border-violet-400 min-w-0"
+            className="flex-1 text-xs border border-neutral-200 dark:border-neutral-600 rounded px-2 py-1 outline-none focus:border-violet-400 min-w-0 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200 placeholder-neutral-400 dark:placeholder-neutral-500"
           />
           <button
             type="button"
@@ -372,7 +372,7 @@ export function Toolbar({ editor }: ToolbarProps) {
   ]
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 px-3 py-1.5">
+    <div className="flex flex-wrap items-center gap-0.5 px-3 py-1.5 dark:bg-[#1f1f1f]">
       {historyButtons.map(btn => <ToolbarBtn key={btn.label} item={btn} />)}
       <Divider />
       {headingButtons.map(btn => <ToolbarBtn key={btn.label} item={btn} />)}
