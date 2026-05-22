@@ -103,12 +103,11 @@ export function TipTapEditor({ note, onSave, readOnly = false, currentUser }: Ti
     },
   })
 
-  // Initialize content: wait briefly for remote peer state, then load from DB if alone
+  // Initialize content from DB; Yjs CRDT merges any collaborative edits as they arrive
   useEffect(() => {
     if (!editor || initializedRef.current) return
     initializedRef.current = true
 
-    const delay = currentUser ? 1200 : 0
     const timer = setTimeout(() => {
       const current = JSON.stringify(editor.getJSON())
       const empty = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph' }] })
@@ -117,7 +116,7 @@ export function TipTapEditor({ note, onSave, readOnly = false, currentUser }: Ti
         lastSavedContent.current = JSON.stringify(note.content)
         setSaveStatus('saved')
       }
-    }, delay)
+    }, 0)
 
     return () => clearTimeout(timer)
   // eslint-disable-next-line react-hooks/exhaustive-deps

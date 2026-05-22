@@ -161,7 +161,9 @@ function LinkButton({ editor }: { editor: Editor }) {
 function ImageButton({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false)
   const [src, setSrc] = useState('')
+  const [uploading, setUploading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
   function openPopover() {
@@ -176,10 +178,27 @@ function ImageButton({ editor }: { editor: Editor }) {
     setOpen(false)
   }
 
-  useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 0)
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+      const res = await fetch('/api/upload-image', { method: 'POST', body: formData })
+      if (res.ok) {
+        const { url } = await res.json()
+        editor.chain().focus().setImage({ src: url }).run()
+        setOpen(false)
+      }
+    } catch { /* ignore */ } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
+  }
+
+  useEffect(() => {
+    if (open) setTimeout(() => inputRef.current?.focus(), 0)
   }, [open])
 
   useEffect(() => {
@@ -188,9 +207,7 @@ function ImageButton({ editor }: { editor: Editor }) {
         setOpen(false)
       }
     }
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
+    if (open) document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [open])
 
@@ -205,26 +222,48 @@ function ImageButton({ editor }: { editor: Editor }) {
         <Image size={15} />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-[#252525] border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg p-2 flex gap-1 min-w-[220px]">
-          <input
-            ref={inputRef}
-            type="url"
-            value={src}
-            onChange={e => setSrc(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') apply()
-              if (e.key === 'Escape') setOpen(false)
-            }}
-            placeholder="Image URL..."
-            className="flex-1 text-xs border border-neutral-200 dark:border-neutral-600 rounded px-2 py-1 outline-none focus:border-violet-400 min-w-0 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200 placeholder-neutral-400 dark:placeholder-neutral-500"
-          />
+        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-[#252525] border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg p-2 flex flex-col gap-1.5 min-w-[240px]">
+          <div className="flex gap-1">
+            <input
+              ref={inputRef}
+              type="url"
+              value={src}
+              onChange={e => setSrc(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') apply()
+                if (e.key === 'Escape') setOpen(false)
+              }}
+              placeholder="Paste image URL..."
+              className="flex-1 text-xs border border-neutral-200 dark:border-neutral-600 rounded px-2 py-1 outline-none focus:border-violet-400 min-w-0 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200 placeholder-neutral-400 dark:placeholder-neutral-500"
+            />
+            <button
+              type="button"
+              onClick={apply}
+              className="text-xs px-2 py-1 bg-violet-600 text-white rounded hover:bg-violet-700 transition-colors shrink-0"
+            >
+              Insert
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="flex-1 border-t border-neutral-200 dark:border-neutral-700" />
+            <span className="text-[10px] text-neutral-400">or upload</span>
+            <span className="flex-1 border-t border-neutral-200 dark:border-neutral-700" />
+          </div>
           <button
             type="button"
-            onClick={apply}
-            className="text-xs px-2 py-1 bg-violet-600 text-white rounded hover:bg-violet-700 transition-colors shrink-0"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center justify-center gap-1.5 w-full text-xs px-2 py-1.5 border border-dashed border-neutral-300 dark:border-neutral-600 rounded hover:border-violet-400 hover:text-violet-600 text-neutral-500 dark:text-neutral-400 transition-colors disabled:opacity-50"
           >
-            Insert
+            {uploading ? 'Uploading…' : '📁 Choose image from computer'}
           </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
         </div>
       )}
     </div>

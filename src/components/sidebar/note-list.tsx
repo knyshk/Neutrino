@@ -58,7 +58,7 @@ export function NoteList() {
   async function handlePermanentDelete(note: Note, confirmed: boolean, setConfirmed: (v: boolean) => void) {
     if (!confirmed) { setConfirmed(true); return }
     setConfirmed(false)
-    const res = await fetch(`/api/notes/${note.id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/notes/${note.id}?permanent=true`, { method: 'DELETE' })
     if (res.ok) {
       removeNote(note.id)
       toastSuccess(`"${note.title || 'Untitled'}" permanently deleted`)
@@ -295,8 +295,8 @@ function NoteListItem({
         className={cn(
           'group relative flex w-full flex-col gap-0.5 py-2 text-left transition-colors cursor-pointer',
           isActive
-            ? 'bg-violet-50 dark:bg-[#2d2356] border-r-2 border-violet-600'
-            : 'hover:bg-neutral-100 dark:hover:bg-[#252525]'
+            ? 'bg-violet-100 dark:bg-violet-900/30 border-r-2 border-violet-500'
+            : 'hover:bg-neutral-100 dark:hover:bg-white/5'
         )}
         style={{ paddingLeft: `${12 + indentPx}px`, paddingRight: '12px' }}
         onClick={onClick}

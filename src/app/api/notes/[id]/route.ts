@@ -155,7 +155,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   return NextResponse.json({ note })
 }
 
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { id } = await params
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -164,15 +164,30 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Soft delete
-  const { error } = await supabase
-    .from('notes')
-    .update({ is_deleted: true, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .eq('user_id', user.id)
+  const permanent = new URL(request.url).searchParams.get('permanent') === 'true'
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (permanent) {
+    // Hard delete — permanently removes the row
+    const { error } = await supabase
+      .from('notes')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+  } else {
+    // Soft delete
+    const { error } = await supabase
+      .from('notes')
+      .update({ is_deleted: true, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('user_id', user.id)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
   }
 
   // Remove chunks for this note
