@@ -100,10 +100,10 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
 
   if (!sidebarOpen) {
     return (
-      <div className="flex h-full w-12 flex-col items-center border-r border-neutral-100 bg-neutral-50 py-3">
+      <div className="flex h-full w-12 flex-col items-center border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 py-3">
         <button
           onClick={toggleSidebar}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
           title="Expand sidebar"
         >
           <ChevronRight size={16} />
@@ -113,18 +113,18 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
   }
 
   return (
-    <div className="flex h-full w-64 flex-col border-r border-neutral-100 bg-neutral-50">
+    <div className="flex h-full w-64 flex-col border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-800">
         <div className="flex items-center gap-2">
           <div className="flex h-6 w-6 items-center justify-center rounded-md bg-violet-600">
             <span className="text-xs font-bold text-white">N</span>
           </div>
-          <span className="text-sm font-semibold text-neutral-900">Neutrino</span>
+          <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-200">Neutrino</span>
         </div>
         <button
           onClick={toggleSidebar}
-          className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-200 hover:text-neutral-600 transition-colors"
+          className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-400 dark:text-neutral-500 hover:bg-white dark:hover:bg-neutral-800 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors"
           title="Collapse sidebar"
         >
           <ChevronLeft size={14} />
@@ -132,7 +132,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-neutral-100 px-2 pt-2">
+      <div className="flex border-b border-neutral-200 dark:border-neutral-800 px-2 pt-2">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -140,8 +140,8 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
             className={cn(
               'flex flex-1 items-center justify-center gap-1 rounded-t-md px-1 py-1.5 text-xs font-medium transition-colors',
               activeTab === tab.id
-                ? 'border-b-2 border-violet-600 text-violet-700 bg-white'
-                : 'text-neutral-500 hover:text-neutral-700'
+                ? 'border-b-2 border-violet-600 text-violet-700 bg-white dark:bg-neutral-800 dark:text-violet-400'
+                : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
             )}
           >
             {tab.icon}

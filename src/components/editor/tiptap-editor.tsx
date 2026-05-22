@@ -20,7 +20,7 @@ import { SupabaseProvider, CollabUser } from '@/lib/collaboration/supabase-provi
 import { tiptapToMarkdown } from '@/lib/collaboration/markdown'
 import { Note } from '@/types'
 import { cn } from '@/lib/utils'
-import { Download } from 'lucide-react'
+import { Download, Printer, Copy } from 'lucide-react'
 
 interface TipTapEditorProps {
   note: Note
@@ -34,6 +34,7 @@ type SaveStatus = 'saved' | 'saving' | 'unsaved'
 export function TipTapEditor({ note, onSave, readOnly = false, currentUser }: TipTapEditorProps) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved')
   const [remoteUsers, setRemoteUsers] = useState<CollabUser[]>([])
+  const [copied, setCopied] = useState(false)
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSavedContent = useRef<string>(JSON.stringify(note.content))
   const ydocRef = useRef<Y.Doc>(new Y.Doc())
@@ -128,6 +129,17 @@ export function TipTapEditor({ note, onSave, readOnly = false, currentUser }: Ti
       if (saveTimeout.current) clearTimeout(saveTimeout.current)
     }
   }, [])
+
+  function handlePrint() {
+    window.print()
+  }
+
+  function handleCopy() {
+    if (!editor) return
+    navigator.clipboard.writeText(editor.getText())
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
 
   function handleExportMarkdown() {
     if (!editor) return
