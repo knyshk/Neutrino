@@ -83,8 +83,7 @@ export async function POST(request: NextRequest) {
       extractedText = buffer.toString('utf-8')
     } else if (fileType === 'pdf') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pdfParseModule = await import('pdf-parse') as any
-      const pdfParse = pdfParseModule.default ?? pdfParseModule
+      const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>
       const pdfData = await pdfParse(buffer)
       extractedText = pdfData.text
     } else if (fileType === 'docx') {
