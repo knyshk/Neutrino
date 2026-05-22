@@ -7,6 +7,12 @@ import Placeholder from '@tiptap/extension-placeholder'
 import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
 import CharacterCount from '@tiptap/extension-character-count'
+import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
+import Highlight from '@tiptap/extension-highlight'
+import TextAlign from '@tiptap/extension-text-align'
 import * as Y from 'yjs'
 import { Toolbar } from './toolbar'
 import { PresenceAvatars } from './presence-avatars'
@@ -56,13 +62,19 @@ export function TipTapEditor({ note, onSave, readOnly = false, currentUser }: Ti
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit.configure({ codeBlock: false }),
+      StarterKit.configure({}),
       Placeholder.configure({
         placeholder: 'Start writing…',
         emptyEditorClass: 'is-editor-empty',
       }),
       CharacterCount,
       Collaboration.configure({ document: ydocRef.current }),
+      Link.configure({ openOnClick: false, HTMLAttributes: { class: 'text-violet-600 underline cursor-pointer' } }),
+      Image.configure({ HTMLAttributes: { class: 'max-w-full rounded-lg' } }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Highlight.configure({ multicolor: false }),
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
     ],
     editable: !readOnly,
     editorProps: {

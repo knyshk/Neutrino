@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, Mic, Upload, RotateCcw, Trash2, Users, Pin } from 'lucide-react'
+import { FileText, Mic, Upload, RotateCcw, Trash2, Users, Pin, ArrowUpDown } from 'lucide-react'
 import { useNotesStore } from '@/store/notes-store'
 import { Note } from '@/types'
 import { formatDate, truncate } from '@/lib/utils'
@@ -9,9 +9,23 @@ import { cn } from '@/lib/utils'
 import { NoteListSkeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
 
+const SORT_LABELS: Record<'updated' | 'created' | 'alpha', string> = {
+  updated: 'Updated',
+  created: 'Created',
+  alpha: 'A→Z',
+}
+
+const SORT_CYCLE: Array<'updated' | 'created' | 'alpha'> = ['updated', 'created', 'alpha']
+
 export function NoteList() {
-  const { getFilteredNotes, getTrashedNotes, activeNoteId, setActiveNote, showTrash, setShowTrash, updateNote, removeNote, isLoading } = useNotesStore()
+  const { getFilteredNotes, getTrashedNotes, activeNoteId, setActiveNote, showTrash, setShowTrash, updateNote, removeNote, isLoading, sortOrder, setSortOrder } = useNotesStore()
   const notes = showTrash ? getTrashedNotes() : getFilteredNotes()
+
+  function cycleSortOrder() {
+    const currentIdx = SORT_CYCLE.indexOf(sortOrder)
+    const nextIdx = (currentIdx + 1) % SORT_CYCLE.length
+    setSortOrder(SORT_CYCLE[nextIdx])
+  }
   const { success: toastSuccess, error: toastError } = useToast()
 
   async function handlePin(note: Note) {
@@ -67,6 +81,19 @@ export function NoteList() {
           <Trash2 size={10} />
           {showTrash ? `← Back to notes` : `Trash (${trashedCount})`}
         </button>
+      )}
+
+      {!showTrash && (
+        <div className="flex items-center justify-end px-3 py-1 border-b border-neutral-100">
+          <button
+            onClick={cycleSortOrder}
+            className="flex items-center gap-1 text-[10px] text-neutral-400 hover:text-neutral-600 transition-colors"
+            title="Change sort order"
+          >
+            <ArrowUpDown size={10} />
+            {SORT_LABELS[sortOrder]}
+          </button>
+        </div>
       )}
 
       {notes.length === 0 && (

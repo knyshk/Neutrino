@@ -7,6 +7,7 @@ interface NotesState {
   isLoading: boolean
   searchQuery: string
   showTrash: boolean
+  sortOrder: 'updated' | 'created' | 'alpha'
   setNotes: (notes: Note[]) => void
   addNote: (note: Note) => void
   updateNote: (id: string, updates: Partial<Note>) => void
@@ -15,6 +16,7 @@ interface NotesState {
   setLoading: (loading: boolean) => void
   setSearchQuery: (query: string) => void
   setShowTrash: (show: boolean) => void
+  setSortOrder: (order: 'updated' | 'created' | 'alpha') => void
   getActiveNote: () => Note | undefined
   getFilteredNotes: () => Note[]
   getTrashedNotes: () => Note[]
@@ -26,6 +28,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   isLoading: false,
   searchQuery: '',
   showTrash: false,
+  sortOrder: 'updated',
 
   setNotes: (notes) => set({ notes }),
 
@@ -51,19 +54,30 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 
   setShowTrash: (show) => set({ showTrash: show }),
 
+  setSortOrder: (order) => set({ sortOrder: order }),
+
   getActiveNote: () => {
     const { notes, activeNoteId } = get()
     return notes.find((n) => n.id === activeNoteId)
   },
 
   getFilteredNotes: () => {
-    const { notes, searchQuery } = get()
+    const { notes, searchQuery, sortOrder } = get()
     const active = notes.filter((n) => !n.is_deleted)
     const filtered = !searchQuery.trim() ? active : active.filter(
       (n) => n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (n.content_text?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
     )
-    return [...filtered.filter((n) => n.is_pinned), ...filtered.filter((n) => !n.is_pinned)]
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortOrder === 'alpha') {
+        return (a.title || '').localeCompare(b.title || '')
+      } else if (sortOrder === 'created') {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      } else {
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      }
+    })
+    return [...sorted.filter((n) => n.is_pinned), ...sorted.filter((n) => !n.is_pinned)]
   },
 
   getTrashedNotes: () => get().notes.filter((n) => n.is_deleted),
