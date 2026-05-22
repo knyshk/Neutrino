@@ -19,6 +19,7 @@ export interface Note {
   is_shared?: boolean
   is_public?: boolean
   is_pinned?: boolean
+  color?: string | null
   created_at: string
   updated_at: string
 }

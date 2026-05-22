@@ -15,8 +15,11 @@ import {
   Settings,
   Loader2,
   X,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import Link from 'next/link'
+import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase/client'
 import { useNotesStore } from '@/store/notes-store'
 import { useUIStore } from '@/store/ui-store'
@@ -46,6 +49,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
   const router = useRouter()
   const { sidebarOpen, toggleSidebar, activeTab, setActiveTab } = useUIStore()
   const { searchQuery, setSearchQuery } = useNotesStore()
+  const { resolvedTheme, setTheme } = useTheme()
 
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [recordings, setRecordings] = useState<Recording[]>([])

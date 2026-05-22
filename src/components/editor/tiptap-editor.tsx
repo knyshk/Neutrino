@@ -143,6 +143,7 @@ export function TipTapEditor({ note, onSave, readOnly = false, currentUser }: Ti
 
   const wordCount = editor?.storage.characterCount?.words() ?? 0
   const charCount = editor?.storage.characterCount?.characters() ?? 0
+  const readMins = Math.max(1, Math.round(wordCount / 200))
 
   return (
     <div className="flex h-full flex-col">
@@ -182,6 +183,8 @@ export function TipTapEditor({ note, onSave, readOnly = false, currentUser }: Ti
           </span>
           <span className="text-[10px] text-neutral-300">·</span>
           <span className="text-[10px] text-neutral-400">{charCount} chars</span>
+          <span className="text-[10px] text-neutral-300">·</span>
+          <span className="text-[10px] text-neutral-400">{readMins} min read</span>
         </div>
       )}
     </div>

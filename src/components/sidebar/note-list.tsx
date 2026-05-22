@@ -150,6 +150,9 @@ function NoteListItem({
     ? truncate(note.content_text.replace(/\n+/g, ' '), 60)
     : 'Empty note'
 
+  const words = (note.content_text || '').split(/\s+/).filter(Boolean).length
+  const readMins = Math.max(1, Math.round(words / 200))
+
   return (
     <button
       onClick={onClick}
@@ -161,6 +164,12 @@ function NoteListItem({
       )}
     >
       <div className="flex items-center gap-1.5">
+        {note.color && (
+          <span
+            className="shrink-0 rounded-full"
+            style={{ width: 6, height: 6, backgroundColor: note.color }}
+          />
+        )}
         <SourceIcon size={11} className={isActive ? 'text-violet-600' : 'text-neutral-400'} />
         <span className={cn('flex-1 truncate text-xs font-medium', isActive ? 'text-violet-700' : 'text-neutral-700')}>
           {note.title || 'Untitled Note'}
@@ -182,6 +191,7 @@ function NoteListItem({
         <span className="truncate text-[11px] text-neutral-400">{preview}</span>
         <span className="shrink-0 text-[10px] text-neutral-300">{formatDate(note.updated_at)}</span>
       </div>
+      <span className="text-[10px] text-neutral-400">{readMins} min read</span>
     </button>
   )
 }
