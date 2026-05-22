@@ -31,11 +31,16 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup')
+  const isAuthRoute =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/signup') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password')
   const isProtectedRoute =
     pathname.startsWith('/notes') ||
     pathname.startsWith('/files') ||
     pathname.startsWith('/recordings') ||
+    pathname.startsWith('/settings') ||
     pathname === '/'
 
   if (!user && isProtectedRoute) {
