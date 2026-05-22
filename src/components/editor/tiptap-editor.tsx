@@ -172,6 +172,27 @@ export function TipTapEditor({ note, onSave, readOnly = false, currentUser }: Ti
               <Download size={11} />
               .md
             </button>
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-1 text-[10px] text-neutral-400 hover:text-violet-600 transition-colors"
+              title="Print note"
+            >
+              <Printer size={11} />
+            </button>
+            <div className="relative">
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1 text-[10px] text-neutral-400 hover:text-violet-600 transition-colors"
+                title="Copy note text"
+              >
+                <Copy size={11} />
+              </button>
+              {copied && (
+                <span className="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-800 px-1.5 py-0.5 text-[10px] text-white pointer-events-none">
+                  Copied!
+                </span>
+              )}
+            </div>
             <span
               className={cn('text-xs transition-colors whitespace-nowrap', {
                 'text-neutral-400': saveStatus === 'saved',

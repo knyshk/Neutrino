@@ -164,7 +164,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
                   placeholder="Search notes…"
                   data-search-input
                   className={cn(
-                    'h-8 w-full rounded-md border border-neutral-200 bg-white pl-8 text-xs text-neutral-700 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-violet-400',
+                    'h-8 w-full rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 pl-8 text-xs text-neutral-700 dark:text-neutral-200 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-violet-400',
                     searchQuery ? 'pr-6' : 'pr-3'
                   )}
                 />
@@ -179,7 +179,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
               </div>
               <button
                 onClick={onNewNote}
-                className="flex w-full items-center gap-2 rounded-md border border-dashed border-neutral-300 px-2.5 py-1.5 text-xs text-neutral-500 hover:border-violet-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
+                className="flex w-full items-center gap-2 rounded-md border border-dashed border-neutral-300 dark:border-neutral-700 px-2.5 py-1.5 text-xs text-neutral-500 dark:text-neutral-400 hover:border-violet-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-950 dark:hover:text-violet-400 transition-colors"
               >
                 <Plus size={13} />
                 New note
@@ -279,14 +279,23 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
       </div>
 
       {/* Footer */}
-      <div className="border-t border-neutral-100 p-2">
-        <Link href="/settings" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700 transition-colors">
-          <Settings size={13} />
-          Settings
-        </Link>
+      <div className="border-t border-neutral-200 dark:border-neutral-800 p-2">
+        <div className="flex items-center gap-1">
+          <Link href="/settings" className="flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-xs text-neutral-500 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">
+            <Settings size={13} />
+            Settings
+          </Link>
+          <button
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+            title={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {resolvedTheme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+          </button>
+        </div>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700 transition-colors"
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-neutral-500 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
         >
           <LogOut size={13} />
           <span className="truncate">{userEmail || 'Sign out'}</span>

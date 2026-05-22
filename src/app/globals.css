@@ -165,3 +165,9 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+@media print {
+  body * { visibility: hidden; }
+  .prose, .prose * { visibility: visible; }
+  .prose { position: absolute; left: 0; top: 0; }
+}
