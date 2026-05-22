@@ -7,11 +7,12 @@ import { formatDuration, cn } from '@/lib/utils'
 
 interface RecorderProps {
   onTranscriptReady: (recording: Recording, note: Note) => void
+  parentNoteId?: string
 }
 
 type RecordState = 'idle' | 'recording' | 'paused' | 'transcribing' | 'done' | 'error'
 
-export function Recorder({ onTranscriptReady }: RecorderProps) {
+export function Recorder({ onTranscriptReady, parentNoteId }: RecorderProps) {
   const [state, setState] = useState<RecordState>('idle')
   const [elapsed, setElapsed] = useState(0)
   const [title, setTitle] = useState('')
@@ -97,6 +98,7 @@ export function Recorder({ onTranscriptReady }: RecorderProps) {
     const formData = new FormData()
     formData.append('audio', audioBlob, 'recording.webm')
     formData.append('title', title || `Recording ${new Date().toLocaleDateString()}`)
+    if (parentNoteId) formData.append('parent_id', parentNoteId)
 
     try {
       const res = await fetch('/api/transcribe', { method: 'POST', body: formData })
@@ -131,6 +133,12 @@ export function Recorder({ onTranscriptReady }: RecorderProps) {
   if (state === 'idle') {
     return (
       <div className="p-2 space-y-2">
+        {parentNoteId && (
+          <p className="text-[10px] text-violet-500 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
+            Will save as subpage of active note
+          </p>
+        )}
         <input
           type="text"
           value={title}

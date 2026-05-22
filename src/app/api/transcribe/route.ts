@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData()
   const audioFile = formData.get('audio') as File | null
   const title = (formData.get('title') as string) || 'Untitled Recording'
+  const parentId = (formData.get('parent_id') as string | null) || null
 
   if (!audioFile) {
     return NextResponse.json({ error: 'No audio file provided' }, { status: 400 })
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
         content_text: transcript,
         source_type: 'recording',
         recording_id: recording.id,
-        parent_id: null,
+        parent_id: parentId,
       })
       .select('id, user_id, title, content, content_text, source_type, recording_id, file_id, is_deleted, is_public, is_pinned, color, parent_id, created_at, updated_at')
       .single()

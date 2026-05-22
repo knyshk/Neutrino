@@ -276,6 +276,7 @@ export function Sidebar({ onNewNote, onTranscriptReady, userEmail }: SidebarProp
                 setRecordings((prev) => [recording, ...prev])
                 onTranscriptReady(recording, note)
               }}
+              parentNoteId={activeNoteId ?? undefined}
             />
             {recordingsLoading && (
               <div className="flex justify-center py-4">
