@@ -190,7 +190,7 @@ function NotesPageInner() {
     <>
       <div className="flex h-full">
         <Sidebar onNewNote={handleNewNote} onTranscriptReady={handleTranscriptReady} userEmail={currentUser?.email} />
-        <main className="flex flex-1 flex-col overflow-hidden bg-white">
+        <main className="flex flex-1 flex-col overflow-hidden bg-white dark:bg-[#191919]">
           {isLoading ? (
             <div className="flex flex-1 items-center justify-center">
               <Spinner size="lg" />
@@ -269,14 +269,14 @@ function NoteWorkspace({
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center overflow-visible border-b border-neutral-100 bg-white px-8 pt-6 pb-2 gap-3">
+    <div className="flex h-full flex-col bg-white dark:bg-[#191919]">
+      <div className="flex items-center overflow-visible border-b border-neutral-100 dark:border-[#2d2d2d] bg-white dark:bg-[#191919] px-8 pt-6 pb-2 gap-3">
         <input
           type="text"
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Untitled Note"
-          className="flex-1 min-w-0 text-2xl font-bold text-neutral-900 placeholder-neutral-300 focus:outline-none bg-transparent"
+          className="flex-1 min-w-0 text-2xl font-bold text-neutral-900 dark:text-[#e8e8e8] placeholder-neutral-300 dark:placeholder-neutral-600 focus:outline-none bg-transparent"
         />
         <div className="flex items-center gap-1 shrink-0" title="Note color label">
           {COLOR_OPTIONS.map((opt) => (
@@ -302,7 +302,7 @@ function NoteWorkspace({
         </div>
         <button
           onClick={() => onDuplicate()}
-          className="relative z-10 flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-neutral-300 hover:text-neutral-800 transition-colors"
+          className="relative z-10 flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 dark:border-[#2d2d2d] px-3 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-500 hover:text-neutral-800 dark:hover:text-[#e8e8e8] transition-colors"
           title="Duplicate note"
         >
           <Copy size={13} />
@@ -310,7 +310,7 @@ function NoteWorkspace({
         </button>
         <button
           onClick={() => setShareOpen(true)}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-violet-300 hover:text-violet-600 transition-colors"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 dark:border-[#2d2d2d] px-3 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:border-violet-300 hover:text-violet-600 dark:hover:border-violet-500 dark:hover:text-violet-400 transition-colors"
         >
           <Share2 size={13} />
           Share
@@ -328,21 +328,21 @@ function NoteWorkspace({
 
 function EmptyState({ onNewNote, hasNotes }: { onNewNote: () => void; hasNotes: boolean }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center p-8">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50">
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center p-8 bg-white dark:bg-[#191919]">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50 dark:bg-violet-950/40">
         <FileText size={28} className="text-violet-500" />
       </div>
       <div>
-        <h2 className="text-lg font-semibold text-neutral-800">
+        <h2 className="text-lg font-semibold text-neutral-800 dark:text-[#e8e8e8]">
           {hasNotes ? 'Select a note' : 'Your workspace is empty'}
         </h2>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
           {hasNotes ? 'Choose a note from the sidebar or create a new one' : 'Create your first note to get started'}
         </p>
-        <p className="mt-2 text-xs text-neutral-400">
-          <kbd className="rounded border border-neutral-200 px-1 py-0.5 text-[10px] font-mono">⌘N</kbd> new note
+        <p className="mt-2 text-xs text-neutral-400 dark:text-neutral-500">
+          <kbd className="rounded border border-neutral-200 dark:border-[#2d2d2d] dark:text-neutral-400 px-1 py-0.5 text-[10px] font-mono">⌘N</kbd> new note
           &nbsp;·&nbsp;
-          <kbd className="rounded border border-neutral-200 px-1 py-0.5 text-[10px] font-mono">⌘K</kbd> search
+          <kbd className="rounded border border-neutral-200 dark:border-[#2d2d2d] dark:text-neutral-400 px-1 py-0.5 text-[10px] font-mono">⌘K</kbd> search
         </p>
       </div>
       <button

@@ -142,14 +142,14 @@ export function NoteList() {
   return (
     <div className="flex flex-col h-full">
       {/* Trash toggle */}
-      {trashedCount > 0 && (
+      {(trashedCount > 0 || showTrash) && (
         <button
           onClick={() => setShowTrash(!showTrash)}
           className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition-colors border-b border-neutral-100',
+            'flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition-colors border-b border-neutral-100 dark:border-[#2d2d2d]',
             showTrash
-              ? 'text-red-500 bg-red-50'
-              : 'text-neutral-400 hover:text-neutral-600'
+              ? 'text-red-500 bg-red-50 dark:bg-red-950/30'
+              : 'text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300'
           )}
         >
           <Trash2 size={10} />
